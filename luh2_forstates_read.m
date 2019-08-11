@@ -13,7 +13,7 @@ primf_init(primf_init>1e19)=NaN;
 secdf_init=ncread(filepath,'secdf',[1 1 year1ind],[Inf Inf 1]);
 secdf_init(secdf_init>1e19)=NaN;
 
-%Regrid to 1 x 1 degree
+%Aggregate to 1 x 1 degree
 primf_init_1deg=NaN(360,180);
 secdf_init_1deg=NaN(360,180);
 for xx=1:360

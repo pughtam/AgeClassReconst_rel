@@ -65,7 +65,7 @@ if inc_woodharv
     clear primf_harv
 end
 
-%Regrid to 1 x 1 degree
+%Aggregate to 1 x 1 degree
 luh2_forlu_gain_1deg=NaN(360,180,nyear);
 for xx=1:360
     for yy=1:180

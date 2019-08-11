@@ -107,7 +107,7 @@ secdf_to_range(secdf_to_range>1e19)=NaN;
 luh2_forlu_loss_sec=luh2_forlu_loss_sec+secdf_to_range;
 clear secdf_to_range
 
-%Regrid to 1 x 1 degree
+%Aggregate to 1 x 1 degree
 luh2_forlu_loss_prim_1deg=zeros(360,180,nyear);
 luh2_forlu_loss_sec_1deg=zeros(360,180,nyear);
 for xx=1:360
