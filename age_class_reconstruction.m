@@ -11,7 +11,12 @@
 year1=1900; %First calendar year of simulation for which output is required (i.e. after spin-up)
 nyear=115; %Total number of years of simulation for which output is required
 inc_woodharv=false; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false
-inc_dist=true; %Include random background disturbance (true) or just LUH2 transitions (false)
+inc_dist=true; %Include background disturbance (true) or just LUH2 transitions (false)
+
+use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=1; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=2; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
+
 output_crosscheck_plots=0; %Make diagnostic cross-check plots
 output_years=[1900 1950 2015]; %Years for which to provide outputs
 gfad_comp=false; %Include GFAD in the output plots
@@ -53,6 +58,16 @@ distint=fliplr(distint);
 %---
 %Calculations section
 %Track primary and secondary forest from LUH2 separately and only merge together in the final output array.
+
+if use_dist_scen
+    %If using a disturbance scenario, initialise the annual multiplicative array here
+    dist_scen=NaN(nyear,1);
+    for nn=1:nyear
+        df=dist_scen_end-dist_scen_start;
+        dist_scen(nn)=dist_scen_start+(nn*(df/nyear));
+    end
+    clear nn
+end
 
 %Initialise forest fractions as the maximum age
 fage_sec=zeros(360,180,nages);
@@ -139,13 +154,25 @@ for yy=1:nyear+nspinup
         %Carry out random disturbance (equal probability across all ages of secondary and primary forest) and add
         %to youngest age class of secondary forest.
         %Disturb a fixed fraction per year defined by 1/distint
+
+        if use_dist_scen
+            %Modify the disturbance rate
+            if yy<=nspinup
+                distrate=(1./distint)*dist_scen(1);
+            else
+                distrate=(1./distint)*dist_scen(yy-nspinup);
+            end
+        else
+            distrate=(1./distint);
+        end
+
         %Secondary forest
-        frac_dist_sec=fage_sec(:,:,2:nages).*repmat(1./distint,[1 1 nages-1]);
+        frac_dist_sec=fage_sec(:,:,2:nages).*repmat(distrate,[1 1 nages-1]);
         fage_sec(:,:,2:nages)=fage_sec(:,:,2:nages)-frac_dist_sec;
         fage_sec(:,:,1)=fage_sec(:,:,1)+sum(frac_dist_sec,3);
         clear frac_dist_sec
         %Primary forest
-        frac_dist_prim=fage_prim(:,:,2:nages).*repmat(1./distint,[1 1 nages-1]);
+        frac_dist_prim=fage_prim(:,:,2:nages).*repmat(distrate,[1 1 nages-1]);
         fage_prim(:,:,2:nages)=fage_prim(:,:,2:nages)-frac_dist_prim;
         fage_prim(:,:,1)=fage_prim(:,:,1)+sum(frac_dist_prim,3);
         clear frac_dist_prim
