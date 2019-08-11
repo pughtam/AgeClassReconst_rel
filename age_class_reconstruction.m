@@ -13,9 +13,9 @@ nyear=115; %Total number of years of simulation for which output is required
 inc_woodharv=false; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false
 inc_dist=true; %Include background disturbance (true) or just LUH2 transitions (false)
 
-use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+use_dist_scen=false; %Modify the background disturbance rate by a multiplicative scenario
 dist_scen_start=1; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
-dist_scen_end=2; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
+dist_scen_end=0.5; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
 
 output_crosscheck_plots=0; %Make diagnostic cross-check plots
 output_years=[1900 1950 2015]; %Years for which to provide outputs
@@ -266,12 +266,13 @@ end
 
 %Make plot
 ages=5:10:nages;
+yy=3; %Currently set to plot for lat year only
 figure
 for nn=1:nregion
     ss(nn)=subplot(3,3,nn);
     hold on
-    plot(ages(1:14),fage_out_decade_reg(nn,1:14),'r.-','markersize',15)
-    plot(ages(15),fage_out_decade_reg(nn,15),'r.','markersize',15)
+    plot(ages(1:14),fage_out_decade_reg(nn,1:14,yy),'r.-','markersize',15)
+    plot(ages(15),fage_out_decade_reg(nn,15,yy),'r.','markersize',15)
     if gfad_comp
         plot(ages(1:14),gfad_fage_area_sum_reg_upper(nn,1:14),'k-','markersize',15)
         plot(ages(1:14),gfad_fage_area_sum_reg_stan(nn,1:14),'-','markersize',15,'color',[0.7 0.7 0.7])
@@ -307,10 +308,4 @@ set(ss(6),'Position',[0.7 0.4 0.25 0.25])
 set(ss(7),'Position',[0.1 0.1 0.25 0.25])
 set(ss(8),'Position',[0.4 0.1 0.25 0.25])
 set(ss(9),'Position',[0.7 0.1 0.25 0.25])
-
-
-
-
-%ALLOW DISTURBANCE RATE TO VARY IN TIME FROM YEAR1
-
 
