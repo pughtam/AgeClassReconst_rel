@@ -13,13 +13,13 @@ nyear=115; %Total number of years of simulation for which output is required
 inc_woodharv=false; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false
 inc_dist=true; %Include background disturbance (true) or just LUH2 transitions (false)
 
-use_dist_scen=false; %Modify the background disturbance rate by a multiplicative scenario
-dist_scen_start=1; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
-dist_scen_end=0.5; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
+use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=0.5; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
 
 output_crosscheck_plots=0; %Make diagnostic cross-check plots
 output_years=[1900 1950 2015]; %Years for which to provide outputs
-gfad_comp=false; %Include GFAD in the output plots
+gfad_comp=true; %Include GFAD in the output plots
 
 %---
 %Settings
@@ -256,7 +256,21 @@ for nn=1:nyout
         end
     end
 end
+clear nn aa rr fage_out_decade_area_sel
+
+%Aggregate age distributions over the globe
+fage_out_decade_globe=NaN(nages_dec,nyout);
+for nn=1:nyout
+    for aa=1:nages_dec
+        fage_out_decade_area_sel=squeeze(fage_out_decade_area(:,:,aa,nn));
+        fage_out_decade_globe(aa,nn)=squeeze(nansum(fage_out_decade_area_sel(:)))/1e12;
+    end
+end
 clear nn aa fage_out_decade_area_sel
+
+%Calculate percentages
+fage_out_decade_reg_perc=(fage_out_decade_reg./repmat(sum(fage_out_decade_reg,2),[1 nages_dec 1]))*100;
+fage_out_decade_globe_perc=(fage_out_decade_globe./repmat(sum(fage_out_decade_globe,1),[nages_dec 1]))*100;
 
 if gfad_comp
     %Read in the GFAD data
@@ -264,9 +278,66 @@ if gfad_comp
             gfad_region_read(fmask,garea,rmask,nregion,gfad_filepath_stan,gfad_filepath_lower,gfad_filepath_upper);
 end
 
-%Make plot
+%Make plot by global, TrBE, TeBD and NE regions
+figure
+ycols={'k','b','r'};
+s1=subplot(2,2,1);
+hold on
+for yy=1:nyout
+    plot(ages(1:14),fage_out_decade_globe_perc(1:14,yy),'.-','markersize',15,'color',ycols{yy})
+end
+legend('1900','1950','2015')
+ylabel('% forest area')
+set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
+            '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
+set(gca,'XTickLabelRotation',300)
+title('Global')
+set(gca,'XLim',[0 140])
+
+s2=subplot(2,2,2);
+hold on
+for yy=1:nyout
+    plot(ages(1:14),fage_out_decade_reg_perc(1,1:14,yy),'.-','markersize',15,'color',ycols{yy})
+end
+ylabel('% forest area')
+set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
+            '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
+set(gca,'XTickLabelRotation',300)
+title(regions{1})
+set(gca,'XLim',[0 140])
+
+s3=subplot(2,2,3);
+hold on
+for yy=1:nyout
+    plot(ages(1:14),fage_out_decade_reg_perc(5,1:14,yy),'.-','markersize',15,'color',ycols{yy})
+end
+set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
+            '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
+set(gca,'XTickLabelRotation',300)
+title(regions{5})
+set(gca,'XLim',[0 140])
+xlabel('Age class')
+
+s4=subplot(2,2,4);
+hold on
+for yy=1:nyout
+    plot(ages(1:14),fage_out_decade_reg_perc(6,1:14,yy),'.-','markersize',15,'color',ycols{yy})
+end
+set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
+            '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
+set(gca,'XTickLabelRotation',300)
+title(regions{6})
+set(gca,'XLim',[0 140])
+
+set(s1,'Position',[0.1 0.6 0.85 0.3])
+set(s2,'Position',[0.1 0.15 0.25 0.3])
+set(s3,'Position',[0.4 0.15 0.25 0.3])
+set(s4,'Position',[0.7 0.15 0.25 0.3])
+
+
+%Make plot by all ESA regions
 ages=5:10:nages;
-yy=3; %Currently set to plot for lat year only
+yy=3; %Currently set to plot for last year only
 figure
 for nn=1:nregion
     ss(nn)=subplot(3,3,nn);
