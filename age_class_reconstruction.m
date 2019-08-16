@@ -10,10 +10,11 @@
 %Input options
 year1=1900; %First calendar year of simulation for which output is required (i.e. after spin-up)
 nyear=115; %Total number of years of simulation for which output is required
-inc_woodharv=false; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false
+inc_luh2=true; %Include the LUH2 transitions?
+inc_woodharv=false; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false (only functional if inc_luh2=true)
 inc_dist=true; %Include background disturbance (true) or just LUH2 transitions (false)
 
-use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+use_dist_scen=false; %Modify the background disturbance rate by a multiplicative scenario
 dist_scen_start=0.5; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
 dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
 
@@ -90,65 +91,67 @@ for yy=1:nyear+nspinup
     fage_prim(:,:,2:nages-1)=fage_prim(:,:,1:nages-2);
     fage_prim(:,:,1)=zeros(360,180);
 
-    %Subtract forest loss
-    %Remove losses from random age class until all losses are allocated
-    %Primary forest
-    for ii=1:360
-        for jj=1:180
-            if luh2_forlu_loss_prim_1deg(ii,jj,yy)>0
-                to_lose=luh2_forlu_loss_prim_1deg(ii,jj,yy); %Running total of lost forest fraction still to be allocated
-                while to_lose>0.00000001
-                    hf=find(fage_prim(ii,jj,:)>0);
-                    if ~isempty(hf)
-                        rr=randi(length(hf)); %Randomly choose age class
-                        if fage_prim(ii,jj,hf(rr)) > to_lose
-                            fage_prim(ii,jj,hf(rr))=fage_prim(ii,jj,hf(rr))-to_lose;
-                            break
+    if inc_luh2
+        %Subtract forest loss
+        %Remove losses from random age class until all losses are allocated
+        %Primary forest
+        for ii=1:360
+            for jj=1:180
+                if luh2_forlu_loss_prim_1deg(ii,jj,yy)>0
+                    to_lose=luh2_forlu_loss_prim_1deg(ii,jj,yy); %Running total of lost forest fraction still to be allocated
+                    while to_lose>0.00000001
+                        hf=find(fage_prim(ii,jj,:)>0);
+                        if ~isempty(hf)
+                            rr=randi(length(hf)); %Randomly choose age class
+                            if fage_prim(ii,jj,hf(rr)) > to_lose
+                                fage_prim(ii,jj,hf(rr))=fage_prim(ii,jj,hf(rr))-to_lose;
+                                break
+                            else
+                                to_lose=to_lose-fage_prim(ii,jj,hf(rr));
+                                fage_prim(ii,jj,hf(rr))=0;
+                            end
                         else
-                            to_lose=to_lose-fage_prim(ii,jj,hf(rr));
-                            fage_prim(ii,jj,hf(rr))=0;
-                        end
-                    else
-                        %If there is no primary forest to lose then ignore this loss
-                        break
-                    end
-                end
-                clear to_lose rr
-            end
-        end
-        clear jj
-    end
-    clear ii
-    %Secondary forest
-    for ii=1:360
-        for jj=1:180
-            if luh2_forlu_loss_sec_1deg(ii,jj,yy)>0
-                to_lose=luh2_forlu_loss_sec_1deg(ii,jj,yy); %Running total of lost forest fraction still to be allocated
-                while to_lose>0.00000001
-                    hf=find(fage_sec(ii,jj,:)>0);
-                    if ~isempty(hf)
-                        rr=randi(length(hf)); %Randomly choose age class
-                        if fage_sec(ii,jj,hf(rr)) > to_lose
-                            fage_sec(ii,jj,hf(rr))=fage_sec(ii,jj,hf(rr))-to_lose;
+                            %If there is no primary forest to lose then ignore this loss
                             break
-                        else
-                            to_lose=to_lose-fage_sec(ii,jj,hf(rr));
-                            fage_sec(ii,jj,hf(rr))=0;
                         end
-                    else
-                        %If there is no secondary forest to lose then ignore this loss
-                        break
                     end
+                    clear to_lose rr
                 end
-                clear to_lose rr
             end
+            clear jj
         end
-        clear jj
+        clear ii
+        %Secondary forest
+        for ii=1:360
+            for jj=1:180
+                if luh2_forlu_loss_sec_1deg(ii,jj,yy)>0
+                    to_lose=luh2_forlu_loss_sec_1deg(ii,jj,yy); %Running total of lost forest fraction still to be allocated
+                    while to_lose>0.00000001
+                        hf=find(fage_sec(ii,jj,:)>0);
+                        if ~isempty(hf)
+                            rr=randi(length(hf)); %Randomly choose age class
+                            if fage_sec(ii,jj,hf(rr)) > to_lose
+                                fage_sec(ii,jj,hf(rr))=fage_sec(ii,jj,hf(rr))-to_lose;
+                                break
+                            else
+                                to_lose=to_lose-fage_sec(ii,jj,hf(rr));
+                                fage_sec(ii,jj,hf(rr))=0;
+                            end
+                        else
+                            %If there is no secondary forest to lose then ignore this loss
+                            break
+                        end
+                    end
+                    clear to_lose rr
+                end
+            end
+            clear jj
+        end
+        clear ii
+        
+        %Add forest gain to youngest secondary age class
+        fage_sec(:,:,1)=fage_sec(:,:,1)+luh2_forlu_gain_1deg(:,:,yy);
     end
-    clear ii
-
-    %Add forest gain to youngest secondary age class
-    fage_sec(:,:,1)=fage_sec(:,:,1)+luh2_forlu_gain_1deg(:,:,yy);
 
     if inc_dist
         %Carry out random disturbance (equal probability across all ages of secondary and primary forest) and add
@@ -274,7 +277,8 @@ fage_out_decade_globe_perc=(fage_out_decade_globe./repmat(sum(fage_out_decade_gl
 
 if gfad_comp
     %Read in the GFAD data
-    [gfad_fage_area_sum_reg_stan,gfad_fage_area_sum_reg_lower,gfad_fage_area_sum_reg_upper]=...
+    [gfad_fage_area_sum_reg_stan,gfad_fage_area_sum_reg_lower,gfad_fage_area_sum_reg_upper,...
+            fage_area_sum_globe_stan,fage_area_sum_globe_lower,fage_area_sum_globe_upper]=...
             gfad_region_read(fmask,garea,rmask,nregion,gfad_filepath_stan,gfad_filepath_lower,gfad_filepath_upper);
 end
 
@@ -379,4 +383,38 @@ set(ss(6),'Position',[0.7 0.4 0.25 0.25])
 set(ss(7),'Position',[0.1 0.1 0.25 0.25])
 set(ss(8),'Position',[0.4 0.1 0.25 0.25])
 set(ss(9),'Position',[0.7 0.1 0.25 0.25])
+
+%---
+%Make a timeseries plot of global median age (note that this modifies the fage array)
+
+%Remove spin-up data and convert to closed-canopy forest area
+fage(:,:,:,1:nspinup)=[];
+%farea=repmat(garea.*fmask,[1 1 nages]);
+fage=fage.*repmat(garea.*fmask,[1 1 nages nyear]);
+
+fage_global=squeeze(nansum(nansum(fage,2),1));
+
+fage_young_median=NaN(nyear,1);
+fage_young_mean=NaN(nyear,1);
+totarea_young=NaN(nyear,1);
+for yy=1:nyear
+    totarea_young(yy)=sum(fage_global(1:nages-1,yy));
+    cumarea=cumsum(fage_global(:,yy));
+    aa=find(cumarea>totarea_young(yy)/2);
+    fage_young_median(yy)=aa(1);
+fage_young_mean(yy)=wmean(1:nages-1,fage_global(1:nages-1,yy));
+end
+clear yy
+
+figure
+subplot(2,1,1)
+hold on
+plot(1901:2015,totarea_young/1e12)
+plot(1901:2015,fage_global(nages,:)/1e12)
+legend('Regrowth','Old-growth')
+ylabel('Forest area (Mkm2)')
+title('Closed-canopy forest')
+subplot(2,1,2)
+plot(1901:2015,fage_young_mean)
+ylabel('Mean age (yr)')
 

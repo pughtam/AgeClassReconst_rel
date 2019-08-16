@@ -1,4 +1,5 @@
-function [fage_area_sum_reg_stan,fage_area_sum_reg_lower,fage_area_sum_reg_upper]=...
+function [fage_area_sum_reg_stan,fage_area_sum_reg_lower,fage_area_sum_reg_upper,...
+            fage_area_sum_globe_stan,fage_area_sum_globe_lower,fage_area_sum_globe_upper]=...
             gfad_region_read(fmask,garea,rmask,nregion,gfad_filepath_stan,gfad_filepath_lower,gfad_filepath_upper)
 
 maxclass=15;
@@ -73,3 +74,17 @@ for nn=1:nregion
     end
 end
 clear nn aa fage_area_sel
+
+%Make global calculations as well
+fage_area_sum_globe_stan=NaN(maxclass,1);
+fage_area_sum_globe_lower=NaN(maxclass,1);
+fage_area_sum_globe_upper=NaN(maxclass,1);
+for aa=1:maxclass
+    fage_area_sel=squeeze(fage_area_stan(:,:,aa));
+    fage_area_sum_globe_stan(aa)=squeeze(nansum(fage_area_sel(:)))/1e12;
+    fage_area_sel=squeeze(fage_area_lower(:,:,aa));
+    fage_area_sum_globe_lower(aa)=squeeze(nansum(fage_area_sel(:)))/1e12;
+    fage_area_sel=squeeze(fage_area_upper(:,:,aa));
+    fage_area_sum_globe_upper(aa)=squeeze(nansum(fage_area_sel(:)))/1e12;
+end
+clear aa fage_area_sel
