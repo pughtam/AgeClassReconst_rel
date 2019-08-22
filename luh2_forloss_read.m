@@ -69,8 +69,6 @@ for lls=1:llint:720
         clear primf_harv
     end
     
-    
-    
     secdf_to_secdn=ncread(filepath,'secdf_to_secdn',[1 lls year1ind],[Inf llint nyear]);
     secdf_to_secdn(secdf_to_secdn>1e19)=NaN;
     luh2_forlu_loss_sec=secdf_to_secdn;
@@ -115,6 +113,18 @@ for lls=1:llint:720
     secdf_to_range(secdf_to_range>1e19)=NaN;
     luh2_forlu_loss_sec=luh2_forlu_loss_sec+secdf_to_range;
     clear secdf_to_range
+    
+    if inc_woodharv
+        secmf_harv=ncread(filepath,'secmf_harv',[1 lls year1ind],[Inf llint nyear]);
+        secmf_harv(secmf_harv>1e19)=NaN;
+        luh2_forlu_loss_sec=luh2_forlu_loss_sec+secmf_harv;
+        clear secmf_harv
+        
+        secyf_harv=ncread(filepath,'secyf_harv',[1 lls year1ind],[Inf llint nyear]);
+        secyf_harv(secyf_harv>1e19)=NaN;
+        luh2_forlu_loss_sec=luh2_forlu_loss_sec+secyf_harv;
+        clear secyf_harv
+    end
     
     %Aggregate to 1 x 1 degree
     indaggs=ceil(lls/4);

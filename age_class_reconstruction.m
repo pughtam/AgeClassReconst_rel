@@ -9,16 +9,18 @@
 year1=1900; %First calendar year of simulation for which output is required (i.e. after spin-up)
 nyear=115; %Total number of years of simulation for which output is required
 inc_luh2=true; %Include the LUH2 transitions?
-inc_woodharv=false; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false (only functional if inc_luh2=true)
-inc_dist=true; %Include background disturbance (true) or just LUH2 transitions (false)
+inc_woodharv=true; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false (only functional if inc_luh2=true)
+inc_dist=false; %Include background disturbance (true) or just LUH2 transitions (false)
 
-use_dist_scen=false; %Modify the background disturbance rate by a multiplicative scenario
-dist_scen_start=0.5; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=2; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
 dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
 
 output_crosscheck_plots=0; %Make diagnostic cross-check plots
 output_years=[1900 1950 2015]; %Years for which to provide outputs
 gfad_comp=true; %Include GFAD in the output plots
+
+regmask='RECCAP'; %Region mask to use (ESA or RECCAP)
 
 %---
 %Settings
@@ -249,10 +251,19 @@ fmask=double(fmask)./100;
 %Calculate grid-cell area
 garea=global_grid_area_1deg()';
 
-%Load region mask (currently ESA)
-addpath('/data/ESA_landcover/')
-[rmask,regions,nregion]=esa_forest_9regions_new_1deg_func(false);
-rmask=fliplr(rmask');
+%Load region mask
+if strcmp(regmask,'ESA')
+    addpath('/data/ESA_landcover/')
+    [rmask,regions,nregion]=esa_forest_9regions_new_1deg_func(false);
+    rmask=fliplr(rmask');
+elseif strcmp(regmask,'RECCAP')
+    rmask=fliplr(ncread('/data/Masks_etc/RECCAP_MASK11_Mask.nc','Region_Map'));
+    regions={'North America','South America','Europe','Africa','Russia','Middle East',...
+        'China/Japan','South-East Asia','Australasia'};
+    nregion=length(regions);
+else
+    error('Region mask setting is invalid')
+end
 
 %Convert fractions to areas
 fage_out_decade_totfor=squeeze(sum(fage_out_decade,3)); %Total forest fraction
@@ -299,8 +310,14 @@ if gfad_comp
         gfad_region_read(fmask,garea,rmask,nregion,gfad_filepath_stan,gfad_filepath_lower,gfad_filepath_upper);
 end
 
-%Make plot by global, TrBE, TeBD and NE regions
+%Make plot by global, and three selected regions
 ages=5:10:nages;
+
+if strcmp(regmask,'ESA')
+    regsel=[1 5 6];
+elseif strcmp(regmask,'RECCAP')
+    regsel=[1 3 4];
+end
 
 figure
 ycols={'k','b','r'};
@@ -320,36 +337,36 @@ set(gca,'XLim',[0 140])
 s2=subplot(2,2,2);
 hold on
 for yy=1:nyout
-    plot(ages(1:14),fage_out_decade_reg_perc(1,1:14,yy),'.-','markersize',15,'color',ycols{yy})
+    plot(ages(1:14),fage_out_decade_reg_perc(regsel(1),1:14,yy),'.-','markersize',15,'color',ycols{yy})
 end
 ylabel('% forest area')
 set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
     '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
 set(gca,'XTickLabelRotation',300)
-title(regions{1})
+title(regions{regsel(1)})
 set(gca,'XLim',[0 140])
 
 s3=subplot(2,2,3);
 hold on
 for yy=1:nyout
-    plot(ages(1:14),fage_out_decade_reg_perc(5,1:14,yy),'.-','markersize',15,'color',ycols{yy})
+    plot(ages(1:14),fage_out_decade_reg_perc(regsel(2),1:14,yy),'.-','markersize',15,'color',ycols{yy})
 end
 set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
     '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
 set(gca,'XTickLabelRotation',300)
-title(regions{5})
+title(regions{regsel(2)})
 set(gca,'XLim',[0 140])
 xlabel('Age class')
 
 s4=subplot(2,2,4);
 hold on
 for yy=1:nyout
-    plot(ages(1:14),fage_out_decade_reg_perc(6,1:14,yy),'.-','markersize',15,'color',ycols{yy})
+    plot(ages(1:14),fage_out_decade_reg_perc(regsel(3),1:14,yy),'.-','markersize',15,'color',ycols{yy})
 end
 set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
     '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
 set(gca,'XTickLabelRotation',300)
-title(regions{6})
+title(regions{regsel(3)})
 set(gca,'XLim',[0 140])
 
 set(s1,'Position',[0.1 0.6 0.85 0.3])
@@ -359,7 +376,7 @@ set(s4,'Position',[0.7 0.15 0.25 0.3])
 
 %---
 %Output csv file with outputs as in above plot
-fid=fopen('age_reconstruction_luh2dist.csv','w');
+fid=fopen('age_reconstruction_luh2dist_scen2to1_RECCAP.csv','w');
 fprintf(fid,'Units: million km2 closed-canopy forest area\n');
 fprintf(fid,'%d\n',output_years(1));
 fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
