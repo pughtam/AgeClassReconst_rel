@@ -357,7 +357,42 @@ set(s2,'Position',[0.1 0.15 0.25 0.3])
 set(s3,'Position',[0.4 0.15 0.25 0.3])
 set(s4,'Position',[0.7 0.15 0.25 0.3])
 
+%---
+%Output csv file with outputs as in above plot
+fid=fopen('age_reconstruction_luh2dist.csv','w');
+fprintf(fid,'Units: million km2 closed-canopy forest area\n');
+fprintf(fid,'%d\n',output_years(1));
+fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
+for nn=1:nregion
+    fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
+        regions{nn},fage_out_decade_reg(nn,:,1));
+end
+clear nn
+fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
+        'Globe',fage_out_decade_globe(:,1));
+    
+fprintf(fid,'%d\n',output_years(2));
+fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
+for nn=1:nregion
+    fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
+        regions{nn},fage_out_decade_reg(nn,:,2));
+end
+clear nn
+fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
+        'Globe',fage_out_decade_globe(:,2));
 
+fprintf(fid,'%d\n',output_years(3));
+fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
+for nn=1:nregion
+    fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
+        regions{nn},fage_out_decade_reg(nn,:,3));
+end
+clear nn
+fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
+        'Globe',fage_out_decade_globe(:,3));
+fclose(fid);
+
+%---
 %Make plot by all ESA regions
 yy=3; %Currently set to plot for last year only
 figure
