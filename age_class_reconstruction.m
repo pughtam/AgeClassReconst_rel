@@ -9,8 +9,8 @@
 year1=1900; %First calendar year of simulation for which output is required (i.e. after spin-up)
 nyear=115; %Total number of years of simulation for which output is required
 inc_luh2=true; %Include the LUH2 transitions?
-inc_woodharv=true; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false (only functional if inc_luh2=true)
-inc_dist=false; %Include background disturbance (true) or just LUH2 transitions (false)
+inc_woodharv=false; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false (only functional if inc_luh2=true)
+inc_dist=true; %Include background disturbance (true) or just LUH2 transitions (false)
 
 use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
 dist_scen_start=2; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
@@ -19,6 +19,7 @@ dist_scen_end=1; %Multiplier for background disturbance rate at end of simulatio
 output_crosscheck_plots=0; %Make diagnostic cross-check plots
 output_years=[1900 1950 2015]; %Years for which to provide outputs
 gfad_comp=true; %Include GFAD in the output plots
+hansenmask=true; %Mask results according to year 2000 closed-canopy forest cover?
 
 regmask='RECCAP'; %Region mask to use (ESA or RECCAP)
 
@@ -61,6 +62,25 @@ luh2_forlu_gain_1deg=luh2_forgain_read(luh2_filepath_trans,year1ind,nyearluh2,in
 distint=ncread(distfile,'tauO');
 distint=fliplr(distint);
 
+%Assign disturbance rates for areas outside of the closed-canopy mask.
+%Do this using medians for ESA forest types
+
+addpath('/data/ESA_landcover/')
+[rmask,~,nregion]=esa_forest_9regions_new_1deg_func(false);
+rmask=fliplr(rmask');
+
+distint_fill=ones(size(distint))*100; %Background value of 100 years for any oulying areas
+for nn=1:nregion
+    distmed=nanmedian(distint(rmask==nn));
+    distint_fill(rmask==nn)=distmed;
+end
+clear nn distmed
+distint_fill(isnan(distint)==0)=distint(isnan(distint)==0);
+clear rmask nregion
+distint=distint_fill;
+clear distint_fill
+
+
 %---
 %Calculations section
 %Track primary and secondary forest from LUH2 separately and only merge together in the final output array.
@@ -79,6 +99,9 @@ end
 nyout=length(output_years);
 nages_dec=nages/10;
 fage_out_decade=NaN(360,180,nages_dec,nyout);
+
+prim_unallocated=zeros(360,180);
+sec_unallocated=zeros(360,180);
 
 %Loop over latitudes to make the array size acceptable
 llint=20; %index range for latitude bands
@@ -111,11 +134,41 @@ for lls=1:llint:180
         if inc_luh2
             %Subtract forest loss
             %Remove losses from random age class until all losses are allocated
-            %Primary forest
+            
             for ii=1:360
                 for jj=1:llint
-                    if luh2_forlu_loss_prim_1deg(ii,jj,yy)>0
-                        to_lose=luh2_forlu_loss_prim_1deg(ii,jj,yy); %Running total of lost forest fraction still to be allocated
+                    jjj=lls-1+jj;
+                    
+                    %Secondary forest
+                    if luh2_forlu_loss_sec_1deg(ii,jjj,yy)>0
+                        to_lose=luh2_forlu_loss_sec_1deg(ii,jjj,yy); %Running total of lost forest fraction still to be allocated
+                        while to_lose>0.00000001
+                            hf=find(fage_sec(ii,jj,:)>0);
+                            if ~isempty(hf)
+                                rr=randi(length(hf)); %Randomly choose age class
+                                if fage_sec(ii,jj,hf(rr)) > to_lose
+                                    fage_sec(ii,jj,hf(rr))=fage_sec(ii,jj,hf(rr))-to_lose;
+                                    sec_carryover=0;
+                                    break
+                                else
+                                    to_lose=to_lose-fage_sec(ii,jj,hf(rr));
+                                    fage_sec(ii,jj,hf(rr))=0;
+                                    sec_carryover=0;
+                                end
+                            else
+                                %If there is no secondary forest to lose then ignore this loss
+                                %fprintf('WARNING: secondary forest loss greater than current fraction %f\n',to_lose)
+                                sec_unallocated(ii,jjj)=sec_unallocated(ii,jjj)+to_lose;
+                                sec_carryover=to_lose; %Attempt to carryover unallocated losses to primary forest
+                                break
+                            end
+                        end
+                        clear to_lose rr
+                    end
+                    
+                    %Primary forest
+                    if luh2_forlu_loss_prim_1deg(ii,jjj,yy)>0
+                        to_lose=luh2_forlu_loss_prim_1deg(ii,jjj,yy)+sec_carryover; %Running total of lost forest fraction still to be allocated
                         while to_lose>0.00000001
                             hf=find(fage_prim(ii,jj,:)>0);
                             if ~isempty(hf)
@@ -129,40 +182,15 @@ for lls=1:llint:180
                                 end
                             else
                                 %If there is no primary forest to lose then ignore this loss
+                                %fprintf('WARNING: primary forest loss greater than current fraction %f\n',to_lose)
+                                prim_unallocated(ii,jj)=prim_unallocated(ii,jj)+to_lose;
                                 break
                             end
                         end
                         clear to_lose rr
                     end
                 end
-                clear jj
-            end
-            clear ii
-            %Secondary forest
-            for ii=1:360
-                for jj=1:llint
-                    if luh2_forlu_loss_sec_1deg(ii,jj,yy)>0
-                        to_lose=luh2_forlu_loss_sec_1deg(ii,jj,yy); %Running total of lost forest fraction still to be allocated
-                        while to_lose>0.00000001
-                            hf=find(fage_sec(ii,jj,:)>0);
-                            if ~isempty(hf)
-                                rr=randi(length(hf)); %Randomly choose age class
-                                if fage_sec(ii,jj,hf(rr)) > to_lose
-                                    fage_sec(ii,jj,hf(rr))=fage_sec(ii,jj,hf(rr))-to_lose;
-                                    break
-                                else
-                                    to_lose=to_lose-fage_sec(ii,jj,hf(rr));
-                                    fage_sec(ii,jj,hf(rr))=0;
-                                end
-                            else
-                                %If there is no secondary forest to lose then ignore this loss
-                                break
-                            end
-                        end
-                        clear to_lose rr
-                    end
-                end
-                clear jj
+                clear jj jjj
             end
             clear ii
             
@@ -245,8 +273,12 @@ end
 %Plot age distributions for a variety of regions
 
 %Read in forest area
-fmask=fliplr(ncread(formaskfile,'forested_50_percent'));
-fmask=double(fmask)./100;
+if hansenmask
+    fmask=fliplr(ncread(formaskfile,'forested_50_percent'));
+    fmask=double(fmask)./100;
+else
+    fmask=ones(360,180);
+end
 
 %Calculate grid-cell area
 garea=global_grid_area_1deg()';
@@ -270,8 +302,12 @@ fage_out_decade_totfor=squeeze(sum(fage_out_decade,3)); %Total forest fraction
 fage_out_decade_frac=NaN(size(fage_out_decade));
 fage_out_decade_area=NaN(size(fage_out_decade));
 for nn=1:nyout
-    %Standardise by total forest fraction (to allow to use forest fraction from another database)
-    fage_out_decade_frac(:,:,:,nn)=fage_out_decade(:,:,:,nn)./repmat(fage_out_decade_totfor(:,:,nn),[1 1 nages_dec]);
+    if hansenmask
+        %Standardise by total forest fraction (i.e. convert to fraction of gridcell to allow to use forest fraction from another database)
+        fage_out_decade_frac(:,:,:,nn)=fage_out_decade(:,:,:,nn)./repmat(fage_out_decade_totfor(:,:,nn),[1 1 nages_dec]);
+    else
+        fage_out_decade_frac(:,:,:,nn)=fage_out_decade(:,:,:,nn);
+    end
     %Convert to areas using provided forest fraction file
     fage_out_decade_area(:,:,:,nn)=fage_out_decade_frac(:,:,:,nn).*repmat(fmask.*garea,[1 1 nages_dec]);
 end
@@ -317,8 +353,10 @@ if strcmp(regmask,'ESA')
     regsel=[1 5 6];
 elseif strcmp(regmask,'RECCAP')
     regsel=[1 3 4];
+    %regsel=[1 3 5];
 end
 
+%Percentages of forest area
 figure
 ycols={'k','b','r'};
 s1=subplot(2,2,1);
@@ -374,9 +412,65 @@ set(s2,'Position',[0.1 0.15 0.25 0.3])
 set(s3,'Position',[0.4 0.15 0.25 0.3])
 set(s4,'Position',[0.7 0.15 0.25 0.3])
 
+%Absolute values
+figure
+ycols={'k','b','r'};
+s1=subplot(2,2,1);
+hold on
+for yy=1:nyout
+    plot(ages(1:15),fage_out_decade_globe(1:15,yy),'.-','markersize',15,'color',ycols{yy})
+end
+legend('1900','1950','2015')
+ylabel('% forest area')
+set(gca,'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
+    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
+set(gca,'XTickLabelRotation',300)
+title('Global')
+set(gca,'XLim',[0 150])
+
+s2=subplot(2,2,2);
+hold on
+for yy=1:nyout
+    plot(ages(1:15),fage_out_decade_reg(regsel(1),1:15,yy),'.-','markersize',15,'color',ycols{yy})
+end
+ylabel('% forest area')
+set(gca,'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
+    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
+set(gca,'XTickLabelRotation',300)
+title(regions{regsel(1)})
+set(gca,'XLim',[0 150])
+
+s3=subplot(2,2,3);
+hold on
+for yy=1:nyout
+    plot(ages(1:15),fage_out_decade_reg(regsel(2),1:15,yy),'.-','markersize',15,'color',ycols{yy})
+end
+set(gca,'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
+    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
+set(gca,'XTickLabelRotation',300)
+title(regions{regsel(2)})
+set(gca,'XLim',[0 150])
+xlabel('Age class')
+
+s4=subplot(2,2,4);
+hold on
+for yy=1:nyout
+    plot(ages(1:15),fage_out_decade_reg(regsel(3),1:15,yy),'.-','markersize',15,'color',ycols{yy})
+end
+set(gca,'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
+    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
+set(gca,'XTickLabelRotation',300)
+title(regions{regsel(3)})
+set(gca,'XLim',[0 150])
+
+set(s1,'Position',[0.1 0.6 0.85 0.3])
+set(s2,'Position',[0.1 0.15 0.25 0.3])
+set(s3,'Position',[0.4 0.15 0.25 0.3])
+set(s4,'Position',[0.7 0.15 0.25 0.3])
+
 %---
 %Output csv file with outputs as in above plot
-fid=fopen('age_reconstruction_luh2dist_scen2to1_RECCAP.csv','w');
+fid=fopen('age_reconstruction_luh2dist_RECCAP_v2.csv','w');
 fprintf(fid,'Units: million km2 closed-canopy forest area\n');
 fprintf(fid,'%d\n',output_years(1));
 fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
@@ -457,34 +551,35 @@ set(ss(9),'Position',[0.7 0.1 0.25 0.25])
 %---
 %Make a timeseries plot of global median age (note that this modifies the fage array)
 
-%Remove spin-up data and convert to closed-canopy forest area
-fage(:,:,:,1:nspinup)=[];
-%farea=repmat(garea.*fmask,[1 1 nages]);
-fage=fage.*repmat(garea.*fmask,[1 1 nages nyear]);
-
-fage_global=squeeze(nansum(nansum(fage,2),1));
-
-fage_young_median=NaN(nyear,1);
-fage_young_mean=NaN(nyear,1);
-totarea_young=NaN(nyear,1);
-for yy=1:nyear
-    totarea_young(yy)=sum(fage_global(1:nages-1,yy));
-    cumarea=cumsum(fage_global(:,yy));
-    aa=find(cumarea>totarea_young(yy)/2);
-    fage_young_median(yy)=aa(1);
-    fage_young_mean(yy)=wmean(1:nages-1,fage_global(1:nages-1,yy));
-end
-clear yy
-
-figure
-subplot(2,1,1)
-hold on
-plot(1901:2015,totarea_young/1e12)
-plot(1901:2015,fage_global(nages,:)/1e12)
-legend('Regrowth','Old-growth')
-ylabel('Forest area (Mkm2)')
-title('Closed-canopy forest')
-subplot(2,1,2)
-plot(1901:2015,fage_young_mean)
-ylabel('Mean age (yr)')
+% %Remove spin-up data and convert to closed-canopy forest area
+% %LEGACY: Only works if fage array is saved
+% fage(:,:,:,1:nspinup)=[];
+% %farea=repmat(garea.*fmask,[1 1 nages]);
+% fage=fage.*repmat(garea.*fmask,[1 1 nages nyear]);
+% 
+% fage_global=squeeze(nansum(nansum(fage,2),1));
+% 
+% fage_young_median=NaN(nyear,1);
+% fage_young_mean=NaN(nyear,1);
+% totarea_young=NaN(nyear,1);
+% for yy=1:nyear
+%     totarea_young(yy)=sum(fage_global(1:nages-1,yy));
+%     cumarea=cumsum(fage_global(:,yy));
+%     aa=find(cumarea>totarea_young(yy)/2);
+%     fage_young_median(yy)=aa(1);
+%     fage_young_mean(yy)=wmean(1:nages-1,fage_global(1:nages-1,yy));
+% end
+% clear yy
+% 
+% figure
+% subplot(2,1,1)
+% hold on
+% plot(1901:2015,totarea_young/1e12)
+% plot(1901:2015,fage_global(nages,:)/1e12)
+% legend('Regrowth','Old-growth')
+% ylabel('Forest area (Mkm2)')
+% title('Closed-canopy forest')
+% subplot(2,1,2)
+% plot(1901:2015,fage_young_mean)
+% ylabel('Mean age (yr)')
 
