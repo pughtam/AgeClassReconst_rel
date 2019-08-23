@@ -15,7 +15,6 @@ luh2_forlu_gain_1deg=NaN(360,180,nyear);
 llint=80; %index range for latitude bands
 
 for lls=1:llint:720
-    lls
     
     primn_to_secdf=ncread(filepath,'primn_to_secdf',[1 lls year1ind],[Inf llint nyear]);
     primn_to_secdf(primn_to_secdf>1e19)=NaN;
@@ -72,6 +71,16 @@ for lls=1:llint:720
         primf_harv(primf_harv>1e19)=NaN;
         luh2_forlu_gain=luh2_forlu_gain+primf_harv;
         clear primf_harv
+        
+        secmf_harv=ncread(filepath,'secmf_harv',[1 lls year1ind],[Inf llint nyear]);
+        secmf_harv(secmf_harv>1e19)=NaN;
+        luh2_forlu_gain=luh2_forlu_gain+secmf_harv;
+        clear secmf_harv
+        
+        secyf_harv=ncread(filepath,'secyf_harv',[1 lls year1ind],[Inf llint nyear]);
+        secyf_harv(secyf_harv>1e19)=NaN;
+        luh2_forlu_gain=luh2_forlu_gain+secyf_harv;
+        clear secyf_harv
     end
     
     %Aggregate to 1 x 1 degree
