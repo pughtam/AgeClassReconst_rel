@@ -13,7 +13,7 @@ inc_woodharv=false; %Include the wood harvest transitions? Standard assumption i
 inc_dist=true; %Include background disturbance (true) or just LUH2 transitions (false)
 
 LUC_age_weights=1; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
-dist_age_weights=0; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=1; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
 
 use_dist_scen=false; %Modify the background disturbance rate by a multiplicative scenario
 dist_scen_start=2; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
@@ -22,11 +22,14 @@ dist_scen_end=1; %Multiplier for background disturbance rate at end of simulatio
 output_crosscheck_plots=0; %Make diagnostic cross-check plots
 output_years=[1900 1950 2015]; %Years for which to provide outputs
 gfad_comp=true; %Include GFAD in the output plots
-hansenmask=true; %Mask results according to year 2000 closed-canopy forest cover?
+hansenmask=false; %Mask results according to year 2000 closed-canopy forest cover?
 
 regmask='RECCAP'; %Region mask to use (ESA or RECCAP)
 
 loadinputdata=false; %Do not load input data (for rapid reruns when input data is already in memory)
+
+outputcsv=true;
+csvname='age_reconstruction_luh2dist_RECCAP_unmasked_olderageskew_v3.csv';
 
 %---
 %Settings
@@ -107,10 +110,10 @@ if LUC_age_weights==0
     %Do nothing, no age weighting applied
 elseif LUC_age_weights==1
     %Increased likelihood of LUC for older classes
-    weights_LUC=0:(5/(nages-1)):5;
+    weights_LUC=1:(4/(nages-1)):5;
 elseif LUC_age_weights==2
     %Increased likelihood of LUC for younger classes
-    weights_LUC=5:-(5/(nages-1)):0;
+    weights_LUC=5:-(4/(nages-1)):1;
 else
     error('LUC_age_class not set to 0, 1 or 2')
 end
@@ -123,10 +126,10 @@ if dist_age_weights==0
     %Do nothing, no age weighting applied
 elseif dist_age_weights==1
     %Increased likelihood of disturbance for older classes
-    weights_dist=0:(5/(nages-1)):5;
+    weights_dist=1:(4/(nages-1)):5;
 elseif dist_age_weights==2
     %Increased likelihood of disturbance for younger classes
-    weights_dist=5:-(5/(nages-1)):0;
+    weights_dist=5:-(4/(nages-1)):1;
 else
     error('dist_age_class not set to 0, 1 or 2')
 end
@@ -185,11 +188,12 @@ for lls=1:llint:180
                             hf=find(fage_sec(ii,jj,:)>0); %Only select the ages with forest cover in order to optimise the calculation
                             if ~isempty(hf)
                                 if LUC_age_weights==0
-                                    %Randomly choose age class to remove forest from
-                                    rr=randi(length(hf));
+                                    %Randomly choose age class to remove forest from, weighted by fraction of forest in age class to avoid abnormally low probabilities for old growth
+                                    %rr=randi(length(hf));
+                                    rr=randsample(length(hf),1,true,fage_sec(ii,jj,hf));
                                 elseif LUC_age_weights==1 || LUC_age_weights==2
                                     %Randomly choose age class with modified likelihood by age class
-                                    rr=randsample(length(hf),1,true,weights_LUC(hf));
+                                    rr=randsample(length(hf),1,true,weights_LUC(hf).*squeeze(fage_sec(ii,jj,hf))');
                                 end
                                 
                                 if fage_sec(ii,jj,hf(rr)) > to_lose
@@ -219,11 +223,12 @@ for lls=1:llint:180
                             hf=find(fage_prim(ii,jj,:)>0);
                             if ~isempty(hf)
                                 if LUC_age_weights==0
-                                    %Randomly choose age class to remove forest from
-                                    rr=randi(length(hf));
+                                    %Randomly choose age class to remove forest from, weighted by fraction of forest in age class to avoid abnormally low probabilities for old growth
+                                    %rr=randi(length(hf));
+                                    rr=randsample(length(hf),1,true,fage_prim(ii,jj,hf));
                                 elseif LUC_age_weights==1 || LUC_age_weights==2
                                     %Randomly choose age class, with modified likelihood by age class
-                                    rr=randsample(length(hf),1,true,weights_LUC(hf));
+                                    rr=randsample(length(hf),1,true,weights_LUC(hf).*squeeze(fage_prim(ii,jj,hf))');
                                 end
                                 
                                 if fage_prim(ii,jj,hf(rr)) > to_lose
@@ -297,10 +302,10 @@ for lls=1:llint:180
                             hf=find(fage_prim(ii,jj,:)>0);
                             if ~isempty(hf)
                                 while to_dist_prim(ii,jj)>0.00000001
-                                    %Randomly choose age class, with increased likelihood for older classes
-                                    rr=randsample(length(hf),1,true,weights_dist(hf));
+                                    %Randomly choose age class, with increased likelihood for older classes, weighted by fraction of forest in age class to avoid abnormally low probabilities for old growth
+                                    rr=randsample(length(hf),1,true,weights_dist(hf).*squeeze(fage_prim(ii,jj,hf))');
                                     
-                                    if fage_prim(ii,jj,hf(rr)) > to_dist_prim
+                                    if fage_prim(ii,jj,hf(rr)) > to_dist_prim(ii,jj)
                                         fage_prim(ii,jj,hf(rr))=fage_prim(ii,jj,hf(rr))-to_dist_prim(ii,jj);
                                         fage_prim(ii,jj,1)=fage_prim(ii,jj,1)+to_dist_prim(ii,jj);
                                         break
@@ -319,8 +324,8 @@ for lls=1:llint:180
                             hf=find(fage_sec(ii,jj,:)>0);
                             if ~isempty(hf)
                                 while to_dist_sec(ii,jj)>0.00000001
-                                    %Randomly choose age class, with increased likelihood for older classes
-                                    rr=randsample(length(hf),1,true,weights_dist(hf));
+                                    %Randomly choose age class, with increased likelihood for older classes, weighted by fraction of forest in age class to avoid abnormally low probabilities for old growth
+                                    rr=randsample(length(hf),1,true,weights_dist(hf).*squeeze(fage_sec(ii,jj,hf))');
                                     
                                     if fage_sec(ii,jj,hf(rr)) > to_dist_sec(ii,jj)
                                         fage_sec(ii,jj,hf(rr))=fage_sec(ii,jj,hf(rr))-to_dist_sec(ii,jj);
@@ -457,9 +462,15 @@ fage_out_decade_globe_perc=(fage_out_decade_globe./repmat(sum(fage_out_decade_gl
 
 if gfad_comp
     %Read in the GFAD data
+    if hansenmask
+        fmask_for_gfad=fmask;
+    else
+        %Use the LUH2 mask for the most recent output year
+        fmask_for_gfad=nansum(fage_out_decade(:,:,:,nyout),3);
+    end
     [gfad_fage_area_sum_reg_stan,gfad_fage_area_sum_reg_lower,gfad_fage_area_sum_reg_upper,...
         fage_area_sum_globe_stan,fage_area_sum_globe_lower,fage_area_sum_globe_upper]=...
-        gfad_region_read(fmask,garea,rmask,nregion,gfad_filepath_stan,gfad_filepath_lower,gfad_filepath_upper);
+        gfad_region_read(fmask_for_gfad,garea,rmask,nregion,gfad_filepath_stan,gfad_filepath_lower,gfad_filepath_upper);
 end
 
 %Make plot by global, and three selected regions
@@ -585,39 +596,41 @@ set(s3,'Position',[0.4 0.15 0.25 0.3])
 set(s4,'Position',[0.7 0.15 0.25 0.3])
 
 %---
-%Output csv file with outputs as in above plot
-fid=fopen('age_reconstruction_luh2dist_RECCAP_v2.csv','w');
-fprintf(fid,'Units: million km2 closed-canopy forest area\n');
-fprintf(fid,'%d\n',output_years(1));
-fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
-for nn=1:nregion
+if outputcsv
+    %Output csv file with outputs as in above plot
+    fid=fopen(csvname,'w');
+    fprintf(fid,'Units: million km2 closed-canopy forest area\n');
+    fprintf(fid,'%d\n',output_years(1));
+    fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
+    for nn=1:nregion
+        fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
+            regions{nn},fage_out_decade_reg(nn,:,1));
+    end
+    clear nn
     fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
-        regions{nn},fage_out_decade_reg(nn,:,1));
-end
-clear nn
-fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
         'Globe',fage_out_decade_globe(:,1));
     
-fprintf(fid,'%d\n',output_years(2));
-fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
-for nn=1:nregion
+    fprintf(fid,'%d\n',output_years(2));
+    fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
+    for nn=1:nregion
+        fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
+            regions{nn},fage_out_decade_reg(nn,:,2));
+    end
+    clear nn
     fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
-        regions{nn},fage_out_decade_reg(nn,:,2));
-end
-clear nn
-fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
         'Globe',fage_out_decade_globe(:,2));
-
-fprintf(fid,'%d\n',output_years(3));
-fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
-for nn=1:nregion
+    
+    fprintf(fid,'%d\n',output_years(3));
+    fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
+    for nn=1:nregion
+        fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
+            regions{nn},fage_out_decade_reg(nn,:,3));
+    end
+    clear nn
     fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
-        regions{nn},fage_out_decade_reg(nn,:,3));
-end
-clear nn
-fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
         'Globe',fage_out_decade_globe(:,3));
-fclose(fid);
+    fclose(fid);
+end
 
 %---
 %Make plot by all ESA regions
