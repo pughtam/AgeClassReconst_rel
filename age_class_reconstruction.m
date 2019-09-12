@@ -2,7 +2,7 @@
 %disturbances as defined by Pugh et al. (2019).
 %
 %T. Pugh
-%10.08.19
+%12.09.19
 
 %---
 %Input options
@@ -12,13 +12,6 @@ inc_luh2=true; %Include the LUH2 transitions?
 inc_woodharv=false; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false (only functional if inc_luh2=true)
 inc_dist=true; %Include background disturbance (true) or just LUH2 transitions (false)
 
-LUC_age_weights=1; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
-dist_age_weights=1; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
-
-use_dist_scen=false; %Modify the background disturbance rate by a multiplicative scenario
-dist_scen_start=2; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
-dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
-
 output_crosscheck_plots=0; %Make diagnostic cross-check plots
 output_years=[1900 1950 2015]; %Years for which to provide outputs
 gfad_comp=true; %Include GFAD in the output plots
@@ -26,10 +19,10 @@ hansenmask=false; %Mask results according to year 2000 closed-canopy forest cove
 
 regmask='RECCAP'; %Region mask to use (ESA or RECCAP)
 
-loadinputdata=false; %Do not load input data (for rapid reruns when input data is already in memory)
+loadinputdata=true; %Do not load input data if equal to false (for rapid reruns when input data is already in memory)
 
 outputcsv=true;
-csvname='age_reconstruction_luh2dist_RECCAP_unmasked_olderageskew_v3.csv';
+csvname='age_reconstruction_luh2dist_global_unmasked_multisens_v3.csv';
 
 %---
 %Settings
@@ -51,12 +44,15 @@ gfad_filepath_stan='/data/GFAD_V1-1/GFAD_V1-1.nc';
 gfad_filepath_lower='/data/GFAD_V1-1/GFAD_V1-1_lowerbound.nc';
 gfad_filepath_upper='/data/GFAD_V1-1/GFAD_V1-1_upperbound.nc';
 
+nyout=length(output_years);
+nages_dec=nages/10;
+
 %---
 if loadinputdata
     %Read in necessary data
     
     %Read initial forest state
-    nspinup=nages; %Start nages years before first output year to allow for spin-up of age classes
+    nspinup=nages; %Start nages years before first output year to allow for spin-up of age classes (outputs are insensitive to longer spinup, even for disturbance)
     year1ind=year1-nspinup-firstluh2year+1;
     [primf_init,secdf_init]=luh2_forstates_read(luh2_filepath_states,year1ind);
     
@@ -95,287 +91,120 @@ end
 %Calculations section
 %Track primary and secondary forest from LUH2 separately and only merge together in the final output array.
 
-%If using a disturbance rate scenario in time, initialise the annual multiplicative array here
-if use_dist_scen
-    dist_scen=NaN(nyear,1);
-    for nn=1:nyear
-        df=dist_scen_end-dist_scen_start;
-        dist_scen(nn)=dist_scen_start+(nn*(df/nyear));
-    end
-    clear nn
-end
+simulation_names={'Baseline','Baseline old-skew','Baseline young-skew',...
+    '2to1','2to1 old-skew','2to1 young-skew',...
+    '0p5to1','0p5to1 old-skew','0p5to1 young-skew'};
 
-%Set weight arrays for likelihood of LUC by age class
-if LUC_age_weights==0
-    %Do nothing, no age weighting applied
-elseif LUC_age_weights==1
-    %Increased likelihood of LUC for older classes
-    weights_LUC=1:(4/(nages-1)):5;
-elseif LUC_age_weights==2
-    %Increased likelihood of LUC for younger classes
-    weights_LUC=5:-(4/(nages-1)):1;
-else
-    error('LUC_age_class not set to 0, 1 or 2')
-end
-if length(weights_LUC)>nages
-    error('length(weights_LUC)>nages')
-end
+%Baseline simulation with uniform weighting
+LUC_age_weights=0; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=0; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+use_dist_scen=false; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=1; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
 
-%Set weight arrays for likelihood of disturbance by age class
-if dist_age_weights==0
-    %Do nothing, no age weighting applied
-elseif dist_age_weights==1
-    %Increased likelihood of disturbance for older classes
-    weights_dist=1:(4/(nages-1)):5;
-elseif dist_age_weights==2
-    %Increased likelihood of disturbance for younger classes
-    weights_dist=5:-(4/(nages-1)):1;
-else
-    error('dist_age_class not set to 0, 1 or 2')
-end
-if length(weights_LUC)>nages
-    error('length(weights_dist)>nages')
-end
+fage_out_decade_base=age_class_reconstruction_func(use_dist_scen,LUC_age_weights,inc_dist,inc_luh2,dist_age_weights,output_years,...
+    nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
+    dist_scen_start,dist_scen_end,nyout,nages_dec);
 
-%Settings for desired output years
-nyout=length(output_years);
-nages_dec=nages/10;
-fage_out_decade=NaN(360,180,nages_dec,nyout);
+%Baseline simulation with weighting towards older age classes
+LUC_age_weights=1; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=1; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+use_dist_scen=false; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=1; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
 
-prim_unallocated=zeros(360,180);
-sec_unallocated=zeros(360,180);
+fage_out_decade_base_oldweight=age_class_reconstruction_func(use_dist_scen,LUC_age_weights,inc_dist,inc_luh2,dist_age_weights,output_years,...
+    nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
+    dist_scen_start,dist_scen_end,nyout,nages_dec);
 
-%Loop over latitudes to make the array size acceptable
-llint=20; %index range for latitude bands
+%Baseline simulation with weighting towards younger age classes
+LUC_age_weights=2; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=2; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+use_dist_scen=false; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=1; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
 
-for lls=1:llint:180
-    fprintf('%d\n',lls)
-    
-    %Initialise forest fractions as the maximum age
-    fage_sec=zeros(360,llint,nages);
-    fage_sec(:,:,nages)=secdf_init(:,lls:lls+llint-1);
-    fage_prim=zeros(360,llint,nages);
-    fage_prim(:,:,nages)=primf_init(:,lls:lls+llint-1);
-    
-    fage=zeros(360,llint,nages,nyear+nspinup);
-    
-    %Now start the loop for forest age calculation
-    for yy=1:nyear+nspinup
-        %fprintf('%d\n',yy)
-        
-        %First increment the ages of forest
-        %Secondary forest
-        fage_sec(:,:,nages)=fage_sec(:,:,nages)+fage_sec(:,:,nages-1);
-        fage_sec(:,:,2:nages-1)=fage_sec(:,:,1:nages-2);
-        fage_sec(:,:,1)=zeros(360,llint);
-        %Primary forest
-        fage_prim(:,:,nages)=fage_prim(:,:,nages)+fage_prim(:,:,nages-1);
-        fage_prim(:,:,2:nages-1)=fage_prim(:,:,1:nages-2);
-        fage_prim(:,:,1)=zeros(360,llint);
-        
-        if inc_luh2
-            %Subtract forest loss
-            %Remove losses from random age class until all losses are allocated
-            
-            for ii=1:360
-                for jj=1:llint
-                    jjj=lls-1+jj;
-                    
-                    %Secondary forest
-                    if luh2_forlu_loss_sec_1deg(ii,jjj,yy)>0
-                        to_lose=luh2_forlu_loss_sec_1deg(ii,jjj,yy); %Running total of lost forest fraction still to be allocated
-                        while to_lose>0.00000001
-                            hf=find(fage_sec(ii,jj,:)>0); %Only select the ages with forest cover in order to optimise the calculation
-                            if ~isempty(hf)
-                                if LUC_age_weights==0
-                                    %Randomly choose age class to remove forest from, weighted by fraction of forest in age class to avoid abnormally low probabilities for old growth
-                                    %rr=randi(length(hf));
-                                    rr=randsample(length(hf),1,true,fage_sec(ii,jj,hf));
-                                elseif LUC_age_weights==1 || LUC_age_weights==2
-                                    %Randomly choose age class with modified likelihood by age class
-                                    rr=randsample(length(hf),1,true,weights_LUC(hf).*squeeze(fage_sec(ii,jj,hf))');
-                                end
-                                
-                                if fage_sec(ii,jj,hf(rr)) > to_lose
-                                    fage_sec(ii,jj,hf(rr))=fage_sec(ii,jj,hf(rr))-to_lose;
-                                    sec_carryover=0;
-                                    break
-                                else
-                                    to_lose=to_lose-fage_sec(ii,jj,hf(rr));
-                                    fage_sec(ii,jj,hf(rr))=0;
-                                    sec_carryover=0;
-                                end
-                            else
-                                %If there is no secondary forest to lose then ignore this loss
-                                %fprintf('WARNING: secondary forest loss greater than current fraction %f\n',to_lose)
-                                sec_unallocated(ii,jjj)=sec_unallocated(ii,jjj)+to_lose;
-                                sec_carryover=to_lose; %Attempt to carryover unallocated losses to primary forest
-                                break
-                            end
-                        end
-                        clear to_lose rr
-                    end
-                    
-                    %Primary forest
-                    if luh2_forlu_loss_prim_1deg(ii,jjj,yy)>0
-                        to_lose=luh2_forlu_loss_prim_1deg(ii,jjj,yy)+sec_carryover; %Running total of lost forest fraction still to be allocated
-                        while to_lose>0.00000001
-                            hf=find(fage_prim(ii,jj,:)>0);
-                            if ~isempty(hf)
-                                if LUC_age_weights==0
-                                    %Randomly choose age class to remove forest from, weighted by fraction of forest in age class to avoid abnormally low probabilities for old growth
-                                    %rr=randi(length(hf));
-                                    rr=randsample(length(hf),1,true,fage_prim(ii,jj,hf));
-                                elseif LUC_age_weights==1 || LUC_age_weights==2
-                                    %Randomly choose age class, with modified likelihood by age class
-                                    rr=randsample(length(hf),1,true,weights_LUC(hf).*squeeze(fage_prim(ii,jj,hf))');
-                                end
-                                
-                                if fage_prim(ii,jj,hf(rr)) > to_lose
-                                    fage_prim(ii,jj,hf(rr))=fage_prim(ii,jj,hf(rr))-to_lose;
-                                    break
-                                else
-                                    to_lose=to_lose-fage_prim(ii,jj,hf(rr));
-                                    fage_prim(ii,jj,hf(rr))=0;
-                                end
-                            else
-                                %If there is no primary forest to lose then ignore this loss
-                                %fprintf('WARNING: primary forest loss greater than current fraction %f\n',to_lose)
-                                prim_unallocated(ii,jj)=prim_unallocated(ii,jj)+to_lose;
-                                break
-                            end
-                        end
-                        clear to_lose rr
-                    end
-                end
-                clear jj jjj
-            end
-            clear ii
-            
-            %Add forest gain to youngest secondary age class
-            fage_sec(:,:,1)=fage_sec(:,:,1)+luh2_forlu_gain_1deg(:,lls:lls+llint-1,yy);
-        end
-        
-        if inc_dist
-            %Carry out random disturbance (equal probability across all ages of secondary and primary forest) and add
-            %to youngest age class of secondary forest.
-            %Disturb a fixed fraction per year defined by 1/distint
-            
-            if use_dist_scen
-                %Modify the disturbance rate
-                if yy<=nspinup
-                    distrate=(1./distint(:,lls:lls+llint-1))*dist_scen(1);
-                else
-                    distrate=(1./distint(:,lls:lls+llint-1))*dist_scen(yy-nspinup);
-                end
-            else
-                distrate=(1./distint(:,lls:lls+llint-1));
-            end
-            
-            if dist_age_weights==0
-                %If doing a uniform disturbance then can do this simply across the arrays
-                
-                %Secondary forest
-                frac_dist_sec=fage_sec(:,:,2:nages).*repmat(distrate,[1 1 nages-1]);
-                fage_sec(:,:,2:nages)=fage_sec(:,:,2:nages)-frac_dist_sec; %Do not disturb youngest age class
-                fage_sec(:,:,1)=fage_sec(:,:,1)+sum(frac_dist_sec,3);
-                clear frac_dist_sec
-                %Primary forest
-                frac_dist_prim=fage_prim(:,:,2:nages).*repmat(distrate,[1 1 nages-1]);
-                fage_prim(:,:,2:nages)=fage_prim(:,:,2:nages)-frac_dist_prim;
-                fage_prim(:,:,1)=fage_prim(:,:,1)+sum(frac_dist_prim,3);
-                clear frac_dist_prim
-                
-            elseif dist_age_weights==1 || dist_age_weights==2
-                %Carry out disturbance with likelihood weighted by age class
-                
-                %Calculate total area to disturb
-                to_dist_prim=sum(fage_prim(:,:,2:nages).*repmat(distrate,[1 1 nages-1]),3); 
-                to_dist_sec=sum(fage_sec(:,:,2:nages).*repmat(distrate,[1 1 nages-1]),3);
-                
-                %Remove from random age class until all disturbances are allocated
-                for ii=1:360
-                    for jj=1:llint
-                        
-                        if sum(fage_prim(ii,jj,:))>0
-                            %Primary forest
-                            hf=find(fage_prim(ii,jj,:)>0);
-                            if ~isempty(hf)
-                                while to_dist_prim(ii,jj)>0.00000001
-                                    %Randomly choose age class, with increased likelihood for older classes, weighted by fraction of forest in age class to avoid abnormally low probabilities for old growth
-                                    rr=randsample(length(hf),1,true,weights_dist(hf).*squeeze(fage_prim(ii,jj,hf))');
-                                    
-                                    if fage_prim(ii,jj,hf(rr)) > to_dist_prim(ii,jj)
-                                        fage_prim(ii,jj,hf(rr))=fage_prim(ii,jj,hf(rr))-to_dist_prim(ii,jj);
-                                        fage_prim(ii,jj,1)=fage_prim(ii,jj,1)+to_dist_prim(ii,jj);
-                                        break
-                                    else
-                                        to_dist_prim(ii,jj)=to_dist_prim(ii,jj)-fage_prim(ii,jj,hf(rr));
-                                        fage_prim(ii,jj,1)=fage_prim(ii,jj,1)+fage_prim(ii,jj,hf(rr));
-                                        fage_prim(ii,jj,hf(rr))=0;
-                                    end
-                                end
-                            end
-                            clear rr hf
-                        end
-                        
-                        if sum(fage_sec(ii,jj,:))>0
-                            %Secondary forest
-                            hf=find(fage_sec(ii,jj,:)>0);
-                            if ~isempty(hf)
-                                while to_dist_sec(ii,jj)>0.00000001
-                                    %Randomly choose age class, with increased likelihood for older classes, weighted by fraction of forest in age class to avoid abnormally low probabilities for old growth
-                                    rr=randsample(length(hf),1,true,weights_dist(hf).*squeeze(fage_sec(ii,jj,hf))');
-                                    
-                                    if fage_sec(ii,jj,hf(rr)) > to_dist_sec(ii,jj)
-                                        fage_sec(ii,jj,hf(rr))=fage_sec(ii,jj,hf(rr))-to_dist_sec(ii,jj);
-                                        fage_sec(ii,jj,1)=fage_sec(ii,jj,1)+to_dist_sec(ii,jj);
-                                        break
-                                    else
-                                        to_dist_sec(ii,jj)=to_dist_sec(ii,jj)-fage_sec(ii,jj,hf(rr));
-                                        fage_sec(ii,jj,1)=fage_sec(ii,jj,1)+fage_sec(ii,jj,hf(rr));
-                                        fage_sec(ii,jj,hf(rr))=0;
-                                    end
-                                end
-                            end
-                            clear rr hf
-                        end
-                    end
-                end
-                clear to_dist_prim to_dist_sec
-            end
-                
-        end
-        
-        %Sum both primary and secondary forest in output array
-        fage(:,:,:,yy)=fage_sec+fage_prim;
-    end
-    
-    %---
-    %Postprocessing of fage
-    
-    %Select desired years
-    output_years_ind=output_years-year1+nspinup;
-    fage_out=NaN(360,llint,nages,nyout);
-    for nn=1:nyout
-        fage_out(:,:,:,nn)=fage(:,:,:,output_years_ind(nn));
-    end
-    clear nn
-    
-    %Group age classes to decadal timesteps
-    for nn=1:nyout
-        dd=0;
-        for aa=1:10:nages
-            dd=dd+1;
-            fage_out_decade(:,lls:lls+llint-1,dd,nn)=sum(fage_out(:,:,aa:aa+9,nn),3);
-        end
-        clear dd aa
-    end
-    clear nn
-    
-end
-clear lls llint
-clear fage fage_out fage_prim fage_sec
+fage_out_decade_base_youngweight=age_class_reconstruction_func(use_dist_scen,LUC_age_weights,inc_dist,inc_luh2,dist_age_weights,output_years,...
+    nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
+    dist_scen_start,dist_scen_end,nyout,nages_dec);
+
+
+%2to1 simulation with uniform weighting
+LUC_age_weights=0; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=0; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=2; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
+
+fage_out_decade_2to1=age_class_reconstruction_func(use_dist_scen,LUC_age_weights,inc_dist,inc_luh2,dist_age_weights,output_years,...
+    nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
+    dist_scen_start,dist_scen_end,nyout,nages_dec);
+
+%2to1 simulation with weighting towards older age classes
+LUC_age_weights=1; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=1; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=2; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
+
+fage_out_decade_2to1_oldweight=age_class_reconstruction_func(use_dist_scen,LUC_age_weights,inc_dist,inc_luh2,dist_age_weights,output_years,...
+    nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
+    dist_scen_start,dist_scen_end,nyout,nages_dec);
+
+%2to1 simulation with weighting towards younger age classes
+LUC_age_weights=2; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=2; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=2; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
+
+fage_out_decade_2to1_youngweight=age_class_reconstruction_func(use_dist_scen,LUC_age_weights,inc_dist,inc_luh2,dist_age_weights,output_years,...
+    nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
+    dist_scen_start,dist_scen_end,nyout,nages_dec);
+
+
+%0p5to1 simulation with uniform weighting
+LUC_age_weights=0; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=0; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=0.5; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
+
+fage_out_decade_0p5to1=age_class_reconstruction_func(use_dist_scen,LUC_age_weights,inc_dist,inc_luh2,dist_age_weights,output_years,...
+    nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
+    dist_scen_start,dist_scen_end,nyout,nages_dec);
+
+%0p5to1 simulation with weighting towards older age classes
+LUC_age_weights=1; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=1; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=0.5; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
+
+fage_out_decade_0p5to1_oldweight=age_class_reconstruction_func(use_dist_scen,LUC_age_weights,inc_dist,inc_luh2,dist_age_weights,output_years,...
+    nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
+    dist_scen_start,dist_scen_end,nyout,nages_dec);
+
+%0p5to1 simulation with weighting towards younger age classes
+LUC_age_weights=2; %Whether to have equal likelihood of LUC conversion for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+dist_age_weights=2; %Whether to have equal likelihood of disturbance for all ages classes (0), higher likelihood for older classes (1) or higher likelihood for younger classes (2)
+use_dist_scen=true; %Modify the background disturbance rate by a multiplicative scenario
+dist_scen_start=0.5; %Multiplier for background disturbance rate at year1 and during spin-up (if use_dist_scen=true)
+dist_scen_end=1; %Multiplier for background disturbance rate at end of simulation (if use_dist_scen=true)
+
+fage_out_decade_0p5to1_youngweight=age_class_reconstruction_func(use_dist_scen,LUC_age_weights,inc_dist,inc_luh2,dist_age_weights,output_years,...
+    nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
+    dist_scen_start,dist_scen_end,nyout,nages_dec);
+
+%Make a combined array for postprocessing
+fage_out_decade=cat(5,fage_out_decade_base,fage_out_decade_base_oldweight,fage_out_decade_base_youngweight,...
+    fage_out_decade_2to1,fage_out_decade_2to1_oldweight,fage_out_decade_2to1_youngweight,...
+    fage_out_decade_0p5to1,fage_out_decade_0p5to1_oldweight,fage_out_decade_0p5to1_youngweight);
+%fage_out_decade=cat(5,fage_out_decade_base,fage_out_decade_base_oldweight);
+
+size_fage_out_decade=size(fage_out_decade);
+nsens=size_fage_out_decade(5);
+clear size_fage_out_decade
 
 %---
 if output_crosscheck_plots
@@ -391,7 +220,7 @@ if output_crosscheck_plots
 end
 
 %---
-%Plot age distributions for a variety of regions
+%Calculate regional and global age distributions
 
 %Read in forest area
 if hansenmask
@@ -401,7 +230,7 @@ else
     fmask=ones(360,180);
 end
 
-%Calculate grid-cell area
+%Calculate unmasked grid-cell area
 garea=global_grid_area_1deg()';
 
 %Load region mask
@@ -419,60 +248,52 @@ else
 end
 
 %Convert fractions to areas
-fage_out_decade_totfor=squeeze(sum(fage_out_decade,3)); %Total forest fraction
+fage_out_decade_totfor=squeeze(sum(fage_out_decade_base,3)); %Total forest fraction
 fage_out_decade_frac=NaN(size(fage_out_decade));
 fage_out_decade_area=NaN(size(fage_out_decade));
 for nn=1:nyout
     if hansenmask
         %Standardise by total forest fraction (i.e. convert to fraction of gridcell to allow to use forest fraction from another database)
-        fage_out_decade_frac(:,:,:,nn)=fage_out_decade(:,:,:,nn)./repmat(fage_out_decade_totfor(:,:,nn),[1 1 nages_dec]);
+        fage_out_decade_frac(:,:,:,nn,:)=fage_out_decade(:,:,:,nn,:)./repmat(fage_out_decade_totfor(:,:,nn),[1 1 nages_dec 1 nsens]);
     else
-        fage_out_decade_frac(:,:,:,nn)=fage_out_decade(:,:,:,nn);
+        fage_out_decade_frac(:,:,:,nn,:)=fage_out_decade(:,:,:,nn,:);
     end
     %Convert to areas using provided forest fraction file
-    fage_out_decade_area(:,:,:,nn)=fage_out_decade_frac(:,:,:,nn).*repmat(fmask.*garea,[1 1 nages_dec]);
+    fage_out_decade_area(:,:,:,nn,:)=fage_out_decade_frac(:,:,:,nn,:).*repmat(fmask.*garea,[1 1 nages_dec 1 nsens]);
 end
 clear nn
 
 %Aggregate age distributions over regions
-fage_out_decade_reg=NaN(nregion,nages_dec,nyout);
-for nn=1:nyout
-    for rr=1:nregion
-        for aa=1:nages_dec
-            fage_out_decade_area_sel=squeeze(fage_out_decade_area(:,:,aa,nn));
-            fage_out_decade_reg(rr,aa,nn)=squeeze(nansum(fage_out_decade_area_sel(rmask==rr)))/1e12;
+fage_out_decade_reg=NaN(nregion,nages_dec,nyout,nsens);
+for ss=1:nsens
+    for nn=1:nyout
+        for rr=1:nregion
+            for aa=1:nages_dec
+                fage_out_decade_area_sel=squeeze(fage_out_decade_area(:,:,aa,nn,ss));
+                fage_out_decade_reg(rr,aa,nn,ss)=squeeze(nansum(fage_out_decade_area_sel(rmask==rr)))/1e12;
+            end
         end
     end
 end
-clear nn aa rr fage_out_decade_area_sel
+clear ss nn aa rr fage_out_decade_area_sel
 
 %Aggregate age distributions over the globe
-fage_out_decade_globe=NaN(nages_dec,nyout);
-for nn=1:nyout
-    for aa=1:nages_dec
-        fage_out_decade_area_sel=squeeze(fage_out_decade_area(:,:,aa,nn));
-        fage_out_decade_globe(aa,nn)=squeeze(nansum(fage_out_decade_area_sel(:)))/1e12;
+fage_out_decade_globe=NaN(nages_dec,nyout,nsens);
+for ss=1:nsens
+    for nn=1:nyout
+        for aa=1:nages_dec
+            fage_out_decade_area_sel=squeeze(fage_out_decade_area(:,:,aa,nn,ss));
+            fage_out_decade_globe(aa,nn,ss)=squeeze(nansum(fage_out_decade_area_sel(:)))/1e12;
+        end
     end
 end
-clear nn aa fage_out_decade_area_sel
+clear ss nn aa fage_out_decade_area_sel
 
 %Calculate percentages
 fage_out_decade_reg_perc=(fage_out_decade_reg./repmat(sum(fage_out_decade_reg,2),[1 nages_dec 1]))*100;
 fage_out_decade_globe_perc=(fage_out_decade_globe./repmat(sum(fage_out_decade_globe,1),[nages_dec 1]))*100;
 
-if gfad_comp
-    %Read in the GFAD data
-    if hansenmask
-        fmask_for_gfad=fmask;
-    else
-        %Use the LUH2 mask for the most recent output year
-        fmask_for_gfad=nansum(fage_out_decade(:,:,:,nyout),3);
-    end
-    [gfad_fage_area_sum_reg_stan,gfad_fage_area_sum_reg_lower,gfad_fage_area_sum_reg_upper,...
-        fage_area_sum_globe_stan,fage_area_sum_globe_lower,fage_area_sum_globe_upper]=...
-        gfad_region_read(fmask_for_gfad,garea,rmask,nregion,gfad_filepath_stan,gfad_filepath_lower,gfad_filepath_upper);
-end
-
+%---
 %Make plot by global, and three selected regions
 ages=5:10:nages;
 
@@ -483,232 +304,103 @@ elseif strcmp(regmask,'RECCAP')
     %regsel=[1 3 5];
 end
 
-%Percentages of forest area
-figure
-ycols={'k','b','r'};
-s1=subplot(2,2,1);
-hold on
-for yy=1:nyout
-    plot(ages(1:14),fage_out_decade_globe_perc(1:14,yy),'.-','markersize',15,'color',ycols{yy})
-end
-legend('1900','1950','2015')
-ylabel('% forest area')
-set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
-    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
-set(gca,'XTickLabelRotation',300)
-title('Global')
-set(gca,'XLim',[0 140])
+%Percentages of forest area for baseline simulation
+yname='% forest area';
+age_class_reconstruction_regionalsel_plot_func(fage_out_decade_globe_perc(1:14,:,1),fage_out_decade_reg_perc(:,1:14,:,1),regsel,...
+    ages(1:14),yname,nyout,regions);
 
-s2=subplot(2,2,2);
-hold on
-for yy=1:nyout
-    plot(ages(1:14),fage_out_decade_reg_perc(regsel(1),1:14,yy),'.-','markersize',15,'color',ycols{yy})
-end
-ylabel('% forest area')
-set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
-    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
-set(gca,'XTickLabelRotation',300)
-title(regions{regsel(1)})
-set(gca,'XLim',[0 140])
-
-s3=subplot(2,2,3);
-hold on
-for yy=1:nyout
-    plot(ages(1:14),fage_out_decade_reg_perc(regsel(2),1:14,yy),'.-','markersize',15,'color',ycols{yy})
-end
-set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
-    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
-set(gca,'XTickLabelRotation',300)
-title(regions{regsel(2)})
-set(gca,'XLim',[0 140])
-xlabel('Age class')
-
-s4=subplot(2,2,4);
-hold on
-for yy=1:nyout
-    plot(ages(1:14),fage_out_decade_reg_perc(regsel(3),1:14,yy),'.-','markersize',15,'color',ycols{yy})
-end
-set(gca,'XTick',10:10:140,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
-    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140'})
-set(gca,'XTickLabelRotation',300)
-title(regions{regsel(3)})
-set(gca,'XLim',[0 140])
-
-set(s1,'Position',[0.1 0.6 0.85 0.3])
-set(s2,'Position',[0.1 0.15 0.25 0.3])
-set(s3,'Position',[0.4 0.15 0.25 0.3])
-set(s4,'Position',[0.7 0.15 0.25 0.3])
-
-%Absolute values
-figure
-ycols={'k','b','r'};
-s1=subplot(2,2,1);
-hold on
-for yy=1:nyout
-    plot(ages(1:15),fage_out_decade_globe(1:15,yy),'.-','markersize',15,'color',ycols{yy})
-end
-legend('1900','1950','2015')
-ylabel('% forest area')
-set(gca,'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
-    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
-set(gca,'XTickLabelRotation',300)
-title('Global')
-set(gca,'XLim',[0 150])
-
-s2=subplot(2,2,2);
-hold on
-for yy=1:nyout
-    plot(ages(1:15),fage_out_decade_reg(regsel(1),1:15,yy),'.-','markersize',15,'color',ycols{yy})
-end
-ylabel('% forest area')
-set(gca,'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
-    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
-set(gca,'XTickLabelRotation',300)
-title(regions{regsel(1)})
-set(gca,'XLim',[0 150])
-
-s3=subplot(2,2,3);
-hold on
-for yy=1:nyout
-    plot(ages(1:15),fage_out_decade_reg(regsel(2),1:15,yy),'.-','markersize',15,'color',ycols{yy})
-end
-set(gca,'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
-    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
-set(gca,'XTickLabelRotation',300)
-title(regions{regsel(2)})
-set(gca,'XLim',[0 150])
-xlabel('Age class')
-
-s4=subplot(2,2,4);
-hold on
-for yy=1:nyout
-    plot(ages(1:15),fage_out_decade_reg(regsel(3),1:15,yy),'.-','markersize',15,'color',ycols{yy})
-end
-set(gca,'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
-    '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
-set(gca,'XTickLabelRotation',300)
-title(regions{regsel(3)})
-set(gca,'XLim',[0 150])
-
-set(s1,'Position',[0.1 0.6 0.85 0.3])
-set(s2,'Position',[0.1 0.15 0.25 0.3])
-set(s3,'Position',[0.4 0.15 0.25 0.3])
-set(s4,'Position',[0.7 0.15 0.25 0.3])
+%Absolute values for baseline simulation
+yname='Forest area (Mkm^2)';
+age_class_reconstruction_regionalsel_plot_func(fage_out_decade_globe(:,:,1),fage_out_decade_reg(:,:,:,1),regsel,...
+    ages,yname,nyout,regions);
 
 %---
 if outputcsv
-    %Output csv file with outputs as in above plot
+    %Output csv file with global outputs for each simulation
     fid=fopen(csvname,'w');
     fprintf(fid,'Units: million km2 closed-canopy forest area\n');
     fprintf(fid,'%d\n',output_years(1));
-    fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
-    for nn=1:nregion
+    fprintf(fid,'Simulation,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
+    for ss=1:nsens
         fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
-            regions{nn},fage_out_decade_reg(nn,:,1));
+            simulation_names{ss},fage_out_decade_globe(:,1,ss));
     end
-    clear nn
-    fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
-        'Globe',fage_out_decade_globe(:,1));
+    clear ss
     
     fprintf(fid,'%d\n',output_years(2));
-    fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
-    for nn=1:nregion
+    fprintf(fid,'Simulation,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
+    for ss=1:nsens
         fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
-            regions{nn},fage_out_decade_reg(nn,:,2));
+            simulation_names{ss},fage_out_decade_globe(:,2,ss));
     end
-    clear nn
-    fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
-        'Globe',fage_out_decade_globe(:,2));
+    clear ss
     
     fprintf(fid,'%d\n',output_years(3));
-    fprintf(fid,'Region,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
-    for nn=1:nregion
+    fprintf(fid,'Simulation,1-10,11-20,21-30,31-40,41-50,51-60,61-70,71-80,81-90,91-100,101-110,111-120,121-130,131-140,OG\n');
+    for ss=1:nsens
         fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
-            regions{nn},fage_out_decade_reg(nn,:,3));
+            simulation_names{ss},fage_out_decade_globe(:,3,ss));
     end
-    clear nn
-    fprintf(fid,'%s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n',...
-        'Globe',fage_out_decade_globe(:,3));
+    clear ss
     fclose(fid);
 end
 
-%---
-%Make plot by all ESA regions
-yy=3; %Currently set to plot for last year only
+%Simple plot based on global outputs
 figure
-for nn=1:nregion
-    ss(nn)=subplot(3,3,nn);
-    hold on
-    plot(ages(1:14),fage_out_decade_reg(nn,1:14,yy),'r.-','markersize',15)
-    plot(ages(15),fage_out_decade_reg(nn,15,yy),'r.','markersize',15)
-    if gfad_comp
-        plot(ages(1:14),gfad_fage_area_sum_reg_upper(nn,1:14),'k-','markersize',15)
-        plot(ages(1:14),gfad_fage_area_sum_reg_stan(nn,1:14),'-','markersize',15,'color',[0.7 0.7 0.7])
-        plot(ages(1:14),gfad_fage_area_sum_reg_lower(nn,1:14),'-','markersize',15,'color',[0.7 0.7 0.7])
-        plot(ages(15),gfad_fage_area_sum_reg_upper(nn,15),'k.','markersize',15)
-        plot(ages(15),gfad_fage_area_sum_reg_stan(nn,15),'.','markersize',15,'color',[0.7 0.7 0.7],'markerfacecolor',[0.7 0.7 0.7])
-        plot(ages(15),gfad_fage_area_sum_reg_lower(nn,15),'.','markersize',15,'color',[0.7 0.7 0.7],'markerfacecolor',[0.7 0.7 0.7])
-    end
-    title(regions{nn})
-    set(gca,'XLim',[0 155])
-    if nn==7 || nn==8 || nn==9
-        set(gca,'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
-            '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
-        set(gca,'XTickLabelRotation',300)
-    end
-    if nn<=6
-        set(gca,'XTick','','XTickLabel','')
-    end
-    if nn==1 || nn==4 || nn==7
-        ylabel('million km^{-2}')
-    end
-end
-clear nn
-% if gfad_comp
-%     legend('LUH2+dist','GFAD upper','GFAD','GFAD lower')
-% end
-set(ss(1),'Position',[0.1 0.7 0.25 0.25])
-set(ss(2),'Position',[0.4 0.7 0.25 0.25])
-set(ss(3),'Position',[0.7 0.7 0.25 0.25])
-set(ss(4),'Position',[0.1 0.4 0.25 0.25])
-set(ss(5),'Position',[0.4 0.4 0.25 0.25])
-set(ss(6),'Position',[0.7 0.4 0.25 0.25])
-set(ss(7),'Position',[0.1 0.1 0.25 0.25])
-set(ss(8),'Position',[0.4 0.1 0.25 0.25])
-set(ss(9),'Position',[0.7 0.1 0.25 0.25])
+subplot(2,1,1)
+hold on
+plot(output_years,sum(fage_out_decade_globe(1:14,:,1),1),'b-o')
+plot(output_years,fage_out_decade_globe(15,:,1),'k-o')
+plot(output_years,sum(fage_out_decade_globe(1:14,:,2),1),'b^')
+plot(output_years,sum(fage_out_decade_globe(1:14,:,3),1),'bv')
+plot(output_years,fage_out_decade_globe(15,:,2),'k^')
+plot(output_years,fage_out_decade_globe(15,:,3),'kv')
+ylabel('Forest area (M km^2)')
+legend('Regrowth','Old-growth')
+
+subplot(2,1,2)
+hold on
+plot(output_years,sum(fage_out_decade_globe(1:14,:,1),1)./sum(fage_out_decade_globe(1:15,:,1),1),'k-o')
+plot(output_years,sum(fage_out_decade_globe(1:14,:,2),1)./sum(fage_out_decade_globe(1:15,:,3),1),'k^')
+plot(output_years,sum(fage_out_decade_globe(1:14,:,3),1)./sum(fage_out_decade_globe(1:15,:,2),1),'kv')
+ylabel('Ratio young:old forests')
 
 %---
-%Make a timeseries plot of global median age (note that this modifies the fage array)
-
-% %Remove spin-up data and convert to closed-canopy forest area
-% %LEGACY: Only works if fage array is saved
-% fage(:,:,:,1:nspinup)=[];
-% %farea=repmat(garea.*fmask,[1 1 nages]);
-% fage=fage.*repmat(garea.*fmask,[1 1 nages nyear]);
-% 
-% fage_global=squeeze(nansum(nansum(fage,2),1));
-% 
-% fage_young_median=NaN(nyear,1);
-% fage_young_mean=NaN(nyear,1);
-% totarea_young=NaN(nyear,1);
-% for yy=1:nyear
-%     totarea_young(yy)=sum(fage_global(1:nages-1,yy));
-%     cumarea=cumsum(fage_global(:,yy));
-%     aa=find(cumarea>totarea_young(yy)/2);
-%     fage_young_median(yy)=aa(1);
-%     fage_young_mean(yy)=wmean(1:nages-1,fage_global(1:nages-1,yy));
-% end
-% clear yy
-% 
-% figure
-% subplot(2,1,1)
-% hold on
-% plot(1901:2015,totarea_young/1e12)
-% plot(1901:2015,fage_global(nages,:)/1e12)
-% legend('Regrowth','Old-growth')
-% ylabel('Forest area (Mkm2)')
-% title('Closed-canopy forest')
-% subplot(2,1,2)
-% plot(1901:2015,fage_young_mean)
-% ylabel('Mean age (yr)')
-
+if gfad_comp
+    %Make plot by all regions including GFAD
+    %NOTE: If the number/type of simulations change, the arrays passed to
+    %the plotting function will need editing.
+    
+    %Read in the GFAD data
+    if hansenmask
+        fmask_for_gfad=fmask;
+    else
+        %Use the LUH2 mask for the most recent output year
+        fmask_for_gfad=nansum(fage_out_decade(:,:,:,nyout),3);
+    end
+    [gfad_fage_area_sum_reg_stan,gfad_fage_area_sum_reg_lower,gfad_fage_area_sum_reg_upper,...
+        fage_area_sum_globe_stan,fage_area_sum_globe_lower,fage_area_sum_globe_upper]=...
+        gfad_region_read(fmask_for_gfad,garea,rmask,nregion,gfad_filepath_stan,gfad_filepath_lower,gfad_filepath_upper);
+    
+    %Baseline simulations
+    plotyear=3; %Which output year to plot for
+    plot_gfad=true;
+    age_class_reconstruction_9region_gfad_plot_func(fage_out_decade_reg(:,:,:,1:3),...
+        gfad_fage_area_sum_reg_stan,gfad_fage_area_sum_reg_lower,gfad_fage_area_sum_reg_upper,...
+        ages,regions,nregion,plotyear,plot_gfad)
+    
+    %2to1 simulations
+    plotyear=3; %Which output year to plot for
+    plot_gfad=true;
+    age_class_reconstruction_9region_gfad_plot_func(fage_out_decade_reg(:,:,:,4:6),...
+        gfad_fage_area_sum_reg_stan,gfad_fage_area_sum_reg_lower,gfad_fage_area_sum_reg_upper,...
+        ages,regions,nregion,plotyear,plot_gfad)
+    
+    %0p5to1 simulations
+    plotyear=3; %Which output year to plot for
+    plot_gfad=true;
+    age_class_reconstruction_9region_gfad_plot_func(fage_out_decade_reg(:,:,:,7:9),...
+        gfad_fage_area_sum_reg_stan,gfad_fage_area_sum_reg_lower,gfad_fage_area_sum_reg_upper,...
+        ages,regions,nregion,plotyear,plot_gfad)
+    
+end
