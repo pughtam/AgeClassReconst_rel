@@ -89,7 +89,6 @@ for lls=1:llint:720
     for xx=1:360
         for yy=indaggs:indagge
             ind_x=(xx*4)-3;
-            %ind_y=(yy*4)-3;
             ind_y=(yy*4)-3-lls+1;
             temp=luh2_forlu_gain(ind_x:ind_x+3,ind_y:ind_y+3,:);
             luh2_forlu_gain_1deg(xx,yy,:)=nansum(nansum(temp,2),1)/16; %Calculate mean transition fraction, preserving gridcell area

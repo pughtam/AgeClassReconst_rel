@@ -132,7 +132,6 @@ for lls=1:llint:720
     for xx=1:360
         for yy=indaggs:indagge
             ind_x=(xx*4)-3;
-            %ind_y=(yy*4)-3;
             ind_y=(yy*4)-3-lls+1;
             temp_prim=luh2_forlu_loss_prim(ind_x:ind_x+3,ind_y:ind_y+3,:);
             temp_sec=luh2_forlu_loss_sec(ind_x:ind_x+3,ind_y:ind_y+3,:);
