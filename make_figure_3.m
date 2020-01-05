@@ -273,6 +273,7 @@ set(e7.mainLine,'linewidth',2)
 set(e8.mainLine,'linewidth',2)
 set(e7.edge,'linestyle','none')
 set(e8.edge,'linestyle','none')
+box on
 
 subplot(3,1,2);
 e9=shadedErrorBar(temp_luh2_year,temp_luh2_baseline_regrowth,cat(2,abs(temp_luh2_baseline_regrowth-temp_luh2_baseline_old_regrowth),...
@@ -283,6 +284,7 @@ set(e9.mainLine,'linewidth',2)
 set(e10.mainLine,'linewidth',2)
 set(e9.edge,'linestyle','none')
 set(e10.edge,'linestyle','none')
+box on
 
 subplot(3,1,3);
 e11=shadedErrorBar(bor_luh2_year,bor_luh2_baseline_regrowth,cat(2,abs(bor_luh2_baseline_regrowth-bor_luh2_baseline_old_regrowth),...
@@ -293,8 +295,15 @@ set(e11.mainLine,'linewidth',2)
 set(e12.mainLine,'linewidth',2)
 set(e11.edge,'linestyle','none')
 set(e12.edge,'linestyle','none')
+box on
 
 legend(s1,'<140 y; LUC+WH','\geq140 y; LUC+WH','<140 y; LUC','\geq140 y; LUC')
+
+set(gcf,'color','w')
+
+set(s1,'XLim',[1900 2015])
+set(s2,'XLim',[1900 2015])
+set(s3,'XLim',[1900 2015])
 
 set(s1,'Position',[0.13 0.68 0.775 0.26])
 set(s2,'Position',[0.13 0.38 0.775 0.26])

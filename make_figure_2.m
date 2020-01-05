@@ -9,6 +9,8 @@
 % T. Pugh
 % 05.01.20
 
+figure
+
 %---
 %Fig. 2a - human-driven changes over 1900-2015 from LUH2
 
@@ -85,7 +87,7 @@ luh2_baseline_old_oldgrowth=luh2_baseline_old(:,15);
 luh2_baseline_young_oldgrowth=luh2_baseline_young(:,15);
 
 %Make the plot
-figure
+s1=subplot(3,1,1);
 hold on
 e1=shadedErrorBar(luh2woodharv_year,luh2woodharv_baseline_regrowth,cat(2,abs(luh2woodharv_baseline_regrowth-luh2woodharv_baseline_old_regrowth),...
     abs(luh2woodharv_baseline_regrowth-luh2woodharv_baseline_young_regrowth)),'lineProps','b');
@@ -104,10 +106,12 @@ set(e2.edge,'linestyle','none')
 set(e3.edge,'linestyle','none')
 set(e4.edge,'linestyle','none')
 xlabel('Years')
-ylabel('Forest area (million km^2)')
+ylabel('Forest area (M km^2)')
 legend('<140 y; LUC+WH','\geq140 y; LUC+WH','<140 y; LUC','\geq140 y; LUC')
-
-clear all
+set(s1,'XLim',[1900 2015])
+box on
+t1=text(s1,1902,53,'(a)');
+set(t1,'fontweight','bold','fontsize',12)
 
 %---
 %Fig. 2b - changes from all sources in closed-canopy forests over 1900-2100, including a disturbance scenario
@@ -179,7 +183,7 @@ luh2dist_sens_old_oldgrowth=luh2dist_sens_old(:,15);
 luh2dist_sens_young_oldgrowth=luh2dist_sens_young(:,15);
 
 %Make the plot
-figure
+s2=subplot(3,1,2);
 hold on
 e1=shadedErrorBar(luh2dist_year,luh2dist_baseline_regrowth,cat(2,abs(luh2dist_baseline_regrowth-luh2dist_baseline_old_regrowth),...
     abs(luh2dist_baseline_regrowth-luh2dist_baseline_young_regrowth)),'lineProps','b');
@@ -198,8 +202,11 @@ set(e2.edge,'linestyle','none')
 set(e3.edge,'linestyle','none')
 set(e4.edge,'linestyle','none')
 xlabel('Years')
-ylabel('Closed-canopy forest area (million km^2)')
+ylabel('CC forest area (M km^2)')
 legend('<140 y; Baseline','\geq140 y; Baseline','<140 y; Inc. dist','\geq140 y; Inc. dist')
+box on
+t2=text(s2,1903,21,'(b)');
+set(t2,'fontweight','bold','fontsize',12)
 
 %---
 %Fig. 2c - Same data as for Fig. 2b, but showing age distributions
@@ -210,7 +217,7 @@ ind1=find(luh2dist_year==2000);
 ind2=find(luh2dist_year==2050);
 ind3=find(luh2dist_year==2100);
 
-figure
+s3=subplot(3,1,3);
 [p1 h1 h2]=plotyy(ages(1:14),luh2dist_baseline(ind1,1:14),ages(15),luh2dist_baseline(ind1,15));
 hold(p1(1)); hold(p1(2));
 set(h1,'marker','.','markersize',10,'color','k')
@@ -232,7 +239,11 @@ set(p1(2),'XLim',[0 155],'YLim',[0 Inf], 'YTickMode', 'auto', 'YTickLabelMode', 
 set(p1(1),'XTick',10:10:150,'XTickLabel',{'1-10','11-20','21-30','31-40','41-50','51-60',...
     '61-70','71-80','81-90','91-100','101-110','111-120','121-130','131-140','OG'})
 set(p1(1),'XTickLabelRotation',300)
-ylabel(p1(1),'Closed-canopy young forest area (million km^{-2})')
-ylabel(p1(2),'Closed-canopy OG forest area (million km^{-2})')
+ylabel(p1(1),'CC young forest area (M km^{-2})')
+ylabel(p1(2),'CC OG forest area (M km^{-2})')
 set(get(p1(2),'Ylabel'),'Rotation',270,'VerticalAlignment','bottom')
 legend('Baseline; 2000','Baseline; 2050','Baseline; 2100','Inc. dist; 2050','Inc. dist; 2100')
+t3=text(s3,3,2.55,'(c)');
+set(t3,'fontweight','bold','fontsize',12)
+
+set(gcf,'color','w')
