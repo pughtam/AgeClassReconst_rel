@@ -2,6 +2,10 @@
 %
 % Reads csv data created using age_class_reconstruction.m
 %
+% Dependencies:
+% - shadedErrorBar (Rob Campbell (2020). raacampbell/shadedErrorBar (https://www.github.com/raacampbell/shadedErrorBar),
+% GitHub. Retrieved January 5, 2020.)
+%
 % T. Pugh
 % 05.01.20
 
@@ -83,14 +87,22 @@ luh2_baseline_young_oldgrowth=luh2_baseline_young(:,15);
 %Make the plot
 figure
 hold on
-e1=errorbar(luh2woodharv_year,luh2woodharv_baseline_regrowth,abs(luh2woodharv_baseline_regrowth-luh2woodharv_baseline_old_regrowth),...
-    abs(luh2woodharv_baseline_regrowth-luh2woodharv_baseline_young_regrowth),'color','b');
-e2=errorbar(luh2woodharv_year,luh2woodharv_baseline_oldgrowth,abs(luh2woodharv_baseline_oldgrowth-luh2woodharv_baseline_old_oldgrowth),...
-    abs(luh2woodharv_baseline_oldgrowth-luh2woodharv_baseline_young_oldgrowth),'color','k');
-e3=errorbar(luh2_year,luh2_baseline_regrowth,abs(luh2_baseline_regrowth-luh2_baseline_old_regrowth),...
-    abs(luh2_baseline_regrowth-luh2_baseline_young_regrowth),'color','b','linestyle','--');
-e4=errorbar(luh2_year,luh2_baseline_oldgrowth,abs(luh2_baseline_oldgrowth-luh2_baseline_old_oldgrowth),...
-    abs(luh2_baseline_oldgrowth-luh2_baseline_young_oldgrowth),'color','k','linestyle','--');
+e1=shadedErrorBar(luh2woodharv_year,luh2woodharv_baseline_regrowth,cat(2,abs(luh2woodharv_baseline_regrowth-luh2woodharv_baseline_old_regrowth),...
+    abs(luh2woodharv_baseline_regrowth-luh2woodharv_baseline_young_regrowth)),'lineProps','b');
+e2=shadedErrorBar(luh2woodharv_year,luh2woodharv_baseline_oldgrowth,cat(2,abs(luh2woodharv_baseline_oldgrowth-luh2woodharv_baseline_young_oldgrowth),...
+    abs(luh2woodharv_baseline_oldgrowth-luh2woodharv_baseline_old_oldgrowth)),'lineProps','k');
+e3=shadedErrorBar(luh2_year,luh2_baseline_regrowth,cat(2,abs(luh2_baseline_regrowth-luh2_baseline_old_regrowth),...
+    abs(luh2_baseline_regrowth-luh2_baseline_young_regrowth)),'lineProps','b--');
+e4=shadedErrorBar(luh2_year,luh2_baseline_oldgrowth,cat(2,abs(luh2_baseline_oldgrowth-luh2_baseline_young_oldgrowth),...
+    abs(luh2_baseline_oldgrowth-luh2_baseline_old_oldgrowth)),'lineProps','k--');
+set(e1.mainLine,'linewidth',2)
+set(e2.mainLine,'linewidth',2)
+set(e3.mainLine,'linewidth',2)
+set(e4.mainLine,'linewidth',2)
+set(e1.edge,'linestyle','none')
+set(e2.edge,'linestyle','none')
+set(e3.edge,'linestyle','none')
+set(e4.edge,'linestyle','none')
 xlabel('Years')
 ylabel('Forest area (million km^2)')
 legend('<140 y; LUC+WH','\geq140 y; LUC+WH','<140 y; LUC','\geq140 y; LUC')
@@ -169,14 +181,22 @@ luh2dist_sens_young_oldgrowth=luh2dist_sens_young(:,15);
 %Make the plot
 figure
 hold on
-e1=errorbar(luh2dist_year,luh2dist_baseline_regrowth,abs(luh2dist_baseline_regrowth-luh2dist_baseline_old_regrowth),...
-    abs(luh2dist_baseline_regrowth-luh2dist_baseline_young_regrowth),'color','b');
-e2=errorbar(luh2dist_year,luh2dist_baseline_oldgrowth,abs(luh2dist_baseline_oldgrowth-luh2dist_baseline_old_oldgrowth),...
-    abs(luh2dist_baseline_oldgrowth-luh2dist_baseline_young_oldgrowth),'color','k');
-e3=errorbar(luh2dist_year,luh2dist_sens_regrowth,abs(luh2dist_sens_regrowth-luh2dist_sens_old_regrowth),...
-    abs(luh2dist_sens_regrowth-luh2dist_sens_young_regrowth),'color','b','linestyle','--');
-e4=errorbar(luh2dist_year,luh2dist_sens_oldgrowth,abs(luh2dist_sens_oldgrowth-luh2dist_sens_old_oldgrowth),...
-    abs(luh2dist_sens_oldgrowth-luh2dist_sens_young_oldgrowth),'color','k','linestyle','--');
+e1=shadedErrorBar(luh2dist_year,luh2dist_baseline_regrowth,cat(2,abs(luh2dist_baseline_regrowth-luh2dist_baseline_old_regrowth),...
+    abs(luh2dist_baseline_regrowth-luh2dist_baseline_young_regrowth)),'lineProps','b');
+e2=shadedErrorBar(luh2dist_year,luh2dist_baseline_oldgrowth,cat(2,abs(luh2dist_baseline_oldgrowth-luh2dist_baseline_young_oldgrowth),...
+    abs(luh2dist_baseline_oldgrowth-luh2dist_baseline_old_oldgrowth)),'lineProps','k');
+e3=shadedErrorBar(luh2dist_year,luh2dist_sens_regrowth,cat(2,abs(luh2dist_sens_regrowth-luh2dist_sens_old_regrowth),...
+    abs(luh2dist_sens_regrowth-luh2dist_sens_young_regrowth)),'lineProps','b--');
+e4=shadedErrorBar(luh2dist_year,luh2dist_sens_oldgrowth,cat(2,abs(luh2dist_sens_oldgrowth-luh2dist_sens_young_oldgrowth),...
+    abs(luh2dist_sens_oldgrowth-luh2dist_sens_old_oldgrowth)),'lineProps','k--');
+set(e1.mainLine,'linewidth',2)
+set(e2.mainLine,'linewidth',2)
+set(e3.mainLine,'linewidth',2)
+set(e4.mainLine,'linewidth',2)
+set(e1.edge,'linestyle','none')
+set(e2.edge,'linestyle','none')
+set(e3.edge,'linestyle','none')
+set(e4.edge,'linestyle','none')
 xlabel('Years')
 ylabel('Closed-canopy forest area (million km^2)')
 legend('<140 y; Baseline','\geq140 y; Baseline','<140 y; Inc. dist','\geq140 y; Inc. dist')

@@ -2,6 +2,10 @@
 %
 % Reads csv data created using age_class_reconstruction.m
 %
+% Dependencies:
+% - shadedErrorBar (Rob Campbell (2020). raacampbell/shadedErrorBar (https://www.github.com/raacampbell/shadedErrorBar),
+% GitHub. Retrieved January 5, 2020.)
+%
 % T. Pugh
 % 05.01.20
 
@@ -219,49 +223,76 @@ bor_luh2_baseline_young_oldgrowth=bor_luh2_baseline_young(:,15);
 figure
 s1=subplot(3,1,1);
 hold on
-e1=errorbar(trop_luh2woodharv_year,trop_luh2woodharv_baseline_regrowth,abs(trop_luh2woodharv_baseline_regrowth-trop_luh2woodharv_baseline_old_regrowth),...
-    abs(trop_luh2woodharv_baseline_regrowth-trop_luh2woodharv_baseline_young_regrowth),'color','b');
-e2=errorbar(trop_luh2woodharv_year,trop_luh2woodharv_baseline_oldgrowth,abs(trop_luh2woodharv_baseline_oldgrowth-trop_luh2woodharv_baseline_old_oldgrowth),...
-    abs(trop_luh2woodharv_baseline_oldgrowth-trop_luh2woodharv_baseline_young_oldgrowth),'color','k');
+e1=shadedErrorBar(trop_luh2woodharv_year,trop_luh2woodharv_baseline_regrowth,cat(2,abs(trop_luh2woodharv_baseline_regrowth-trop_luh2woodharv_baseline_old_regrowth),...
+    abs(trop_luh2woodharv_baseline_regrowth-trop_luh2woodharv_baseline_young_regrowth)),'lineProps','b');
+e2=shadedErrorBar(trop_luh2woodharv_year,trop_luh2woodharv_baseline_oldgrowth,cat(2,abs(trop_luh2woodharv_baseline_oldgrowth-trop_luh2woodharv_baseline_young_oldgrowth),...
+    abs(trop_luh2woodharv_baseline_oldgrowth-trop_luh2woodharv_baseline_old_oldgrowth)),'lineProps','k');
 ylabel('Forest area (million km^2)')
 set(gca,'XTickLabel','')
 title('(a) Tropical')
+set(e1.mainLine,'linewidth',2)
+set(e2.mainLine,'linewidth',2)
+set(e1.edge,'linestyle','none')
+set(e2.edge,'linestyle','none')
 
 s2=subplot(3,1,2);
 hold on
-e3=errorbar(temp_luh2woodharv_year,temp_luh2woodharv_baseline_regrowth,abs(temp_luh2woodharv_baseline_regrowth-temp_luh2woodharv_baseline_old_regrowth),...
-    abs(temp_luh2woodharv_baseline_regrowth-temp_luh2woodharv_baseline_young_regrowth),'color','b');
-e4=errorbar(temp_luh2woodharv_year,temp_luh2woodharv_baseline_oldgrowth,abs(temp_luh2woodharv_baseline_oldgrowth-temp_luh2woodharv_baseline_old_oldgrowth),...
-    abs(temp_luh2woodharv_baseline_oldgrowth-temp_luh2woodharv_baseline_young_oldgrowth),'color','k');
+e3=shadedErrorBar(temp_luh2woodharv_year,temp_luh2woodharv_baseline_regrowth,cat(2,abs(temp_luh2woodharv_baseline_regrowth-temp_luh2woodharv_baseline_old_regrowth),...
+    abs(temp_luh2woodharv_baseline_regrowth-temp_luh2woodharv_baseline_young_regrowth)),'lineProps','b');
+e4=shadedErrorBar(temp_luh2woodharv_year,temp_luh2woodharv_baseline_oldgrowth,cat(2,abs(temp_luh2woodharv_baseline_oldgrowth-temp_luh2woodharv_baseline_young_oldgrowth),...
+    abs(temp_luh2woodharv_baseline_oldgrowth-temp_luh2woodharv_baseline_old_oldgrowth)),'lineProps','k');
 ylabel('Forest area (million km^2)')
 set(gca,'XTickLabel','')
 title('(b) Temperate and Mediterranean')
+set(e3.mainLine,'linewidth',2)
+set(e4.mainLine,'linewidth',2)
+set(e3.edge,'linestyle','none')
+set(e4.edge,'linestyle','none')
 
 s3=subplot(3,1,3);
 hold on
-e5=errorbar(bor_luh2woodharv_year,bor_luh2woodharv_baseline_regrowth,abs(bor_luh2woodharv_baseline_regrowth-bor_luh2woodharv_baseline_old_regrowth),...
-    abs(bor_luh2woodharv_baseline_regrowth-bor_luh2woodharv_baseline_young_regrowth),'color','b');
-e6=errorbar(bor_luh2woodharv_year,bor_luh2woodharv_baseline_oldgrowth,abs(bor_luh2woodharv_baseline_oldgrowth-bor_luh2woodharv_baseline_old_oldgrowth),...
-    abs(bor_luh2woodharv_baseline_oldgrowth-bor_luh2woodharv_baseline_young_oldgrowth),'color','k');
+e5=shadedErrorBar(bor_luh2woodharv_year,bor_luh2woodharv_baseline_regrowth,cat(2,abs(bor_luh2woodharv_baseline_regrowth-bor_luh2woodharv_baseline_old_regrowth),...
+    abs(bor_luh2woodharv_baseline_regrowth-bor_luh2woodharv_baseline_young_regrowth)),'lineProps','b');
+e6=shadedErrorBar(bor_luh2woodharv_year,bor_luh2woodharv_baseline_oldgrowth,cat(2,abs(bor_luh2woodharv_baseline_oldgrowth-bor_luh2woodharv_baseline_young_oldgrowth),...
+    abs(bor_luh2woodharv_baseline_oldgrowth-bor_luh2woodharv_baseline_old_oldgrowth)),'lineProps','k');
 xlabel('Years')
 ylabel('Forest area (million km^2)')
 title('(c) Boreal')
+set(e5.mainLine,'linewidth',2)
+set(e6.mainLine,'linewidth',2)
+set(e5.edge,'linestyle','none')
+set(e6.edge,'linestyle','none')
 
 %Add on the lines for LUC only
-e7=errorbar(s1,trop_luh2_year,trop_luh2_baseline_regrowth,abs(trop_luh2_baseline_regrowth-trop_luh2_baseline_old_regrowth),...
-    abs(trop_luh2_baseline_regrowth-trop_luh2_baseline_young_regrowth),'color','b','linestyle',':');
-e8=errorbar(s1,trop_luh2_year,trop_luh2_baseline_oldgrowth,abs(trop_luh2_baseline_oldgrowth-trop_luh2_baseline_old_oldgrowth),...
-    abs(trop_luh2_baseline_oldgrowth-trop_luh2_baseline_young_oldgrowth),'color','k','linestyle',':');
+subplot(3,1,1);
+e7=shadedErrorBar(trop_luh2_year,trop_luh2_baseline_regrowth,cat(2,abs(trop_luh2_baseline_regrowth-trop_luh2_baseline_old_regrowth),...
+    abs(trop_luh2_baseline_regrowth-trop_luh2_baseline_young_regrowth)),'lineProps','b--');
+e8=shadedErrorBar(trop_luh2_year,trop_luh2_baseline_oldgrowth,cat(2,abs(trop_luh2_baseline_oldgrowth-trop_luh2_baseline_young_oldgrowth),...
+    abs(trop_luh2_baseline_oldgrowth-trop_luh2_baseline_old_oldgrowth)),'lineProps','k--');
+set(e7.mainLine,'linewidth',2)
+set(e8.mainLine,'linewidth',2)
+set(e7.edge,'linestyle','none')
+set(e8.edge,'linestyle','none')
 
-e9=errorbar(s2,temp_luh2_year,temp_luh2_baseline_regrowth,abs(temp_luh2_baseline_regrowth-temp_luh2_baseline_old_regrowth),...
-    abs(temp_luh2_baseline_regrowth-temp_luh2_baseline_young_regrowth),'color','b','linestyle',':');
-e10=errorbar(s2,temp_luh2_year,temp_luh2_baseline_oldgrowth,abs(temp_luh2_baseline_oldgrowth-temp_luh2_baseline_old_oldgrowth),...
-    abs(temp_luh2_baseline_oldgrowth-temp_luh2_baseline_young_oldgrowth),'color','k','linestyle',':');
+subplot(3,1,2);
+e9=shadedErrorBar(temp_luh2_year,temp_luh2_baseline_regrowth,cat(2,abs(temp_luh2_baseline_regrowth-temp_luh2_baseline_old_regrowth),...
+    abs(temp_luh2_baseline_regrowth-temp_luh2_baseline_young_regrowth)),'lineProps','b--');
+e10=shadedErrorBar(temp_luh2_year,temp_luh2_baseline_oldgrowth,cat(2,abs(temp_luh2_baseline_oldgrowth-temp_luh2_baseline_young_oldgrowth),...
+    abs(temp_luh2_baseline_oldgrowth-temp_luh2_baseline_old_oldgrowth)),'lineProps','k--');
+set(e9.mainLine,'linewidth',2)
+set(e10.mainLine,'linewidth',2)
+set(e9.edge,'linestyle','none')
+set(e10.edge,'linestyle','none')
 
-e11=errorbar(s3,bor_luh2_year,bor_luh2_baseline_regrowth,abs(bor_luh2_baseline_regrowth-bor_luh2_baseline_old_regrowth),...
-    abs(bor_luh2_baseline_regrowth-bor_luh2_baseline_young_regrowth),'color','b','linestyle',':');
-e12=errorbar(s3,bor_luh2_year,bor_luh2_baseline_oldgrowth,abs(bor_luh2_baseline_oldgrowth-bor_luh2_baseline_old_oldgrowth),...
-    abs(bor_luh2_baseline_oldgrowth-bor_luh2_baseline_young_oldgrowth),'color','k','linestyle',':');
+subplot(3,1,3);
+e11=shadedErrorBar(bor_luh2_year,bor_luh2_baseline_regrowth,cat(2,abs(bor_luh2_baseline_regrowth-bor_luh2_baseline_old_regrowth),...
+    abs(bor_luh2_baseline_regrowth-bor_luh2_baseline_young_regrowth)),'lineProps','b--');
+e12=shadedErrorBar(bor_luh2_year,bor_luh2_baseline_oldgrowth,cat(2,abs(bor_luh2_baseline_oldgrowth-bor_luh2_baseline_young_oldgrowth),...
+    abs(bor_luh2_baseline_oldgrowth-bor_luh2_baseline_old_oldgrowth)),'lineProps','k--');
+set(e11.mainLine,'linewidth',2)
+set(e12.mainLine,'linewidth',2)
+set(e11.edge,'linestyle','none')
+set(e12.edge,'linestyle','none')
 
 legend(s1,'<140 y; LUC+WH','\geq140 y; LUC+WH','<140 y; LUC','\geq140 y; LUC')
 
