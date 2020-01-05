@@ -1,4 +1,9 @@
-%Make Figure 2 (global plots)
+% Make Figure 2 (global plots)
+%
+% Reads csv data created using age_class_reconstruction.m
+%
+% T. Pugh
+% 05.01.20
 
 %---
 %Fig. 2a - human-driven changes over 1900-2015 from LUH2
@@ -101,11 +106,11 @@ nyout=22;
 
 luh2dist_year=NaN(nyout,1);
 luh2dist_baseline=NaN(nyout,15);
-%luh2dist_baseline_old=NaN(nyout,15);
-%luh2dist_baseline_young=NaN(nyout,15);
+luh2dist_baseline_old=NaN(nyout,15);
+luh2dist_baseline_young=NaN(nyout,15);
 luh2dist_sens=NaN(nyout,15);
-%luh2dist_sens_old=NaN(nyout,15);
-%luh2dist_sens_young=NaN(nyout,15);
+luh2dist_sens_old=NaN(nyout,15);
+luh2dist_sens_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2dist_masked_fut_scen_global.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
@@ -118,20 +123,20 @@ for nn=1:nyout
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2dist_baseline(nn,:)=cell2mat(data);
     %Get the baseline old-skew simulation data
-    %data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
-    %luh2dist_baseline_old(nn,:)=cell2mat(data);
+    data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
+    luh2dist_baseline_old(nn,:)=cell2mat(data);
     %Get the baseline young-skew simulation data
-    %data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
-    %luh2dist_baseline_young(nn,:)=cell2mat(data);
+    data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
+    luh2dist_baseline_young(nn,:)=cell2mat(data);
     %Get the sensitivity simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2dist_sens(nn,:)=cell2mat(data);
     %Get the sensitivity old-skew simulation data
-    %data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
-    %luh2dist_sens_old(nn,:)=cell2mat(data);
+    data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
+    luh2dist_sens_old(nn,:)=cell2mat(data);
     %Get the sensitivity young-skew simulation data
-    %data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
-    %luh2dist_sens_young(nn,:)=cell2mat(data);
+    data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
+    luh2dist_sens_young(nn,:)=cell2mat(data);
 end
 clear nn data dump
 fclose(fid);
@@ -140,34 +145,26 @@ fclose(fid);
 aa=find(luh2dist_year==2015);
 luh2dist_year(aa)=[];
 luh2dist_baseline(aa,:)=[];
-%luh2dist_baseline_old(aa,:)=[];
-%luh2dist_baseline_young(aa,:)=[];
+luh2dist_baseline_old(aa,:)=[];
+luh2dist_baseline_young(aa,:)=[];
 luh2dist_sens(aa,:)=[];
-%luh2dist_sens_old(aa,:)=[];
-%luh2dist_sens_young(aa,:)=[];
+luh2dist_sens_old(aa,:)=[];
+luh2dist_sens_young(aa,:)=[];
 clear aa
 
 luh2dist_baseline_regrowth=sum(luh2dist_baseline(:,1:14),2);
-%luh2dist_baseline_old_regrowth=sum(luh2dist_baseline_old(:,1:14),2);
-%luh2dist_baseline_young_regrowth=sum(luh2dist_baseline_young(:,1:14),2);
-luh2dist_baseline_old_regrowth=luh2dist_baseline_regrowth;
-luh2dist_baseline_young_regrowth=luh2dist_baseline_regrowth;
+luh2dist_baseline_old_regrowth=sum(luh2dist_baseline_old(:,1:14),2);
+luh2dist_baseline_young_regrowth=sum(luh2dist_baseline_young(:,1:14),2);
 luh2dist_baseline_oldgrowth=luh2dist_baseline(:,15);
-%luh2dist_baseline_old_oldgrowth=luh2dist_baseline_old(:,15);
-%luh2dist_baseline_young_oldgrowth=luh2dist_baseline_young(:,15);
-luh2dist_baseline_old_oldgrowth=luh2dist_baseline_oldgrowth;
-luh2dist_baseline_young_oldgrowth=luh2dist_baseline_oldgrowth;
+luh2dist_baseline_old_oldgrowth=luh2dist_baseline_old(:,15);
+luh2dist_baseline_young_oldgrowth=luh2dist_baseline_young(:,15);
 
 luh2dist_sens_regrowth=sum(luh2dist_sens(:,1:14),2);
-%luh2dist_sens_old_regrowth=sum(luh2dist_sens_old(:,1:14),2);
-%luh2dist_sens_young_regrowth=sum(luh2dist_sens_young(:,1:14),2);
-luh2dist_sens_old_regrowth=luh2dist_sens_regrowth;
-luh2dist_sens_young_regrowth=luh2dist_sens_regrowth;
+luh2dist_sens_old_regrowth=sum(luh2dist_sens_old(:,1:14),2);
+luh2dist_sens_young_regrowth=sum(luh2dist_sens_young(:,1:14),2);
 luh2dist_sens_oldgrowth=luh2dist_sens(:,15);
-%luh2dist_sens_old_oldgrowth=luh2dist_sens_old(:,15);
-%luh2dist_sens_young_oldgrowth=luh2dist_sens_young(:,15);
-luh2dist_sens_old_oldgrowth=luh2dist_sens_oldgrowth;
-luh2dist_sens_young_oldgrowth=luh2dist_sens_oldgrowth;
+luh2dist_sens_old_oldgrowth=luh2dist_sens_old(:,15);
+luh2dist_sens_young_oldgrowth=luh2dist_sens_young(:,15);
 
 %Make the plot
 figure
