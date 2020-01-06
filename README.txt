@@ -17,6 +17,7 @@ Calculations were based upon a historical dataset of land-use change (LUHv2). St
 (a) the probability of an old-growth (nominally 140 y old) stand being transitioned was five times that of a 1-year old stand,
 (b) the probability of a 1-year old stand being transitioned was five times that of an old-growth stand.
 Forest cover gain given by LUHv2 was assigned to the youngest “secondary” age class. Total forest area was based on the “forested” fractions given in the LUHv2 dataset. LUH2 “primary” and “secondary” classes were maintained throughout the calculations to avoid losing transition information, but grouped together in the outputs. These calculations were run annually between 1750 and 2015. Given that old-growth is defined as greater than 140 years, at least 140 years of simulation are required to generate a fully-developed age distribution. Therefore, output for the period 1750-1900 was discarded. The final age distributions are grouped to decadal age classes for display purposes. All calculations were made at 1° x 1° spatial resolution.
+To make these calculations set, inc_luh=true, inc_luh2futscen=false, inc_woodharv=true, inc_dist=false, inc_agesens=true, inc_distsens=false, ccanopymask=false, in age_class_reconstruction.m.
 
 2) Estimates of forest stand age distribution from human activities and natural disturbances in closed-canopy forests.
 
@@ -26,6 +27,7 @@ The same basic method as in (1) was employed, with the following differences:
 - All results are presented for closed-canopy forest area only, defined as at least 50% canopy cover at 0.01° x 0.01° resolution (Pugh et al., 2019b). Land-use changes based on LUHv2 were assumed to be proportionally distributed across open- and closed-canopy forest within a grid cell.
 - Simulations were extended to 2100 using the GCAM RCP 3.4 scenario from LUHv2f.
 - In a sensitivity simulation, non-land-use-change disturbance rates were incremented linearly to 200% of the 2001-2014 values over the period 2015 to 2050 and held constant at that level thereafter.
+To make these calculations set, inc_luh=true, inc_luh2futscen=true, inc_woodharv=false, inc_dist=true, inc_agesens=true, inc_distsens=true, ccanopymask=true, in age_class_reconstruction.m.
 
 
 ## Files
