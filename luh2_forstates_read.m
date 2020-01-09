@@ -1,14 +1,14 @@
 function [primf_init_1deg,secdf_init_1deg]=luh2_forstates_read(filepath,year1ind)
-%Load in the LUH2 states data for a specified period
-%Aggregate to 1 degree resolution
+% Load in the LUH2 states data for a specified period
+% Aggregate to 1 degree resolution
 %
-%filepath should be the path to the states.nc file as downloaded from http://luh.umd.edu/data.shtml
+% filepath should be the path to the states.nc file as downloaded from http://luh.umd.edu/data.shtml
 %
-%T. Pugh
-%10.08.19
+% T. Pugh
+% 10.08.19
 
 %---
-%Do all processing in latitude bands to minimise memory requirements
+% Do all processing in latitude bands to minimise memory requirements
 primf_init_1deg=NaN(360,180);
 secdf_init_1deg=NaN(360,180);
 
@@ -22,7 +22,7 @@ for lls=1:llint:720
     secdf_init=ncread(filepath,'secdf',[1 lls year1ind],[Inf llint 1]);
     secdf_init(secdf_init>1e19)=NaN;
     
-    %Aggregate to 1 x 1 degree
+    % Aggregate to 1 x 1 degree
     indaggs=ceil(lls/4);
     indagge=ceil((lls+llint-1)/4);
     for xx=1:360

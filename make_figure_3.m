@@ -9,12 +9,11 @@
 % T. Pugh
 % 05.01.20
 
-%---
-%Fig. 2a - tropical forest
+%--- Fig. 2a - tropical forest ---
 
 nyout=13;
 
-%Load data - tropical forest
+% Load data - tropical forest
 trop_luh2woodharv_year=NaN(nyout,1);
 trop_luh2woodharv_baseline=NaN(nyout,15);
 trop_luh2woodharv_baseline_old=NaN(nyout,15);
@@ -22,18 +21,18 @@ trop_luh2woodharv_baseline_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2woodharv_unmasked_sens_region_tropical.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
-    %Get the year
+    % Get the year
     data=textscan(fid,'%d\n',1);
     trop_luh2woodharv_year(nn)=data{1};
-    %Ignore the column headings
+    % Ignore the column headings
     dump=textscan(fid,'%s\n',1,'delimiter','\n');
-    %Get the baseline simulation data
+    % Get the baseline simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     trop_luh2woodharv_baseline(nn,:)=cell2mat(data);
-    %Get the baseline old-skew simulation data
+    % Get the baseline old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     trop_luh2woodharv_baseline_old(nn,:)=cell2mat(data);
-    %Get the baseline young-skew simulation data
+    % Get the baseline young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     trop_luh2woodharv_baseline_young(nn,:)=cell2mat(data);
 end
@@ -47,25 +46,25 @@ trop_luh2_baseline_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2_unmasked_sens_region_tropical.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
-    %Get the year
+    % Get the year
     data=textscan(fid,'%d\n',1);
     trop_luh2_year(nn)=data{1};
-    %Ignore the column headings
+    % Ignore the column headings
     dump=textscan(fid,'%s\n',1,'delimiter','\n');
-    %Get the baseline simulation data
+    % Get the baseline simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     trop_luh2_baseline(nn,:)=cell2mat(data);
-    %Get the baseline old-skew simulation data
+    % Get the baseline old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     trop_luh2_baseline_old(nn,:)=cell2mat(data);
-    %Get the baseline young-skew simulation data
+    % Get the baseline young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     trop_luh2_baseline_young(nn,:)=cell2mat(data);
 end
 clear nn data dump
 fclose(fid);
 
-%Load data - temperate and Mediterranean forests
+% Load data - temperate and Mediterranean forests
 temp_luh2woodharv_year=NaN(nyout,1);
 temp_luh2woodharv_baseline=NaN(nyout,15);
 temp_luh2woodharv_baseline_old=NaN(nyout,15);
@@ -73,18 +72,18 @@ temp_luh2woodharv_baseline_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2woodharv_unmasked_sens_region_temperate.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
-    %Get the year
+    % Get the year
     data=textscan(fid,'%d\n',1);
     temp_luh2woodharv_year(nn)=data{1};
-    %Ignore the column headings
+    % Ignore the column headings
     dump=textscan(fid,'%s\n',1,'delimiter','\n');
-    %Get the baseline simulation data
+    % Get the baseline simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     temp_luh2woodharv_baseline(nn,:)=cell2mat(data);
-    %Get the baseline old-skew simulation data
+    % Get the baseline old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     temp_luh2woodharv_baseline_old(nn,:)=cell2mat(data);
-    %Get the baseline young-skew simulation data
+    % Get the baseline young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     temp_luh2woodharv_baseline_young(nn,:)=cell2mat(data);
 end
@@ -98,25 +97,25 @@ temp_luh2_baseline_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2_unmasked_sens_region_temperate.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
-    %Get the year
+    % Get the year
     data=textscan(fid,'%d\n',1);
     temp_luh2_year(nn)=data{1};
-    %Ignore the column headings
+    % Ignore the column headings
     dump=textscan(fid,'%s\n',1,'delimiter','\n');
-    %Get the baseline simulation data
+    % Get the baseline simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     temp_luh2_baseline(nn,:)=cell2mat(data);
-    %Get the baseline old-skew simulation data
+    % Get the baseline old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     temp_luh2_baseline_old(nn,:)=cell2mat(data);
-    %Get the baseline young-skew simulation data
+    % Get the baseline young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     temp_luh2_baseline_young(nn,:)=cell2mat(data);
 end
 clear nn data dump
 fclose(fid);
 
-%Load data - boreal forest
+% Load data - boreal forest
 bor_luh2woodharv_year=NaN(nyout,1);
 bor_luh2woodharv_baseline=NaN(nyout,15);
 bor_luh2woodharv_baseline_old=NaN(nyout,15);
@@ -124,18 +123,18 @@ bor_luh2woodharv_baseline_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2woodharv_unmasked_sens_region_boreal.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
-    %Get the year
+    % Get the year
     data=textscan(fid,'%d\n',1);
     bor_luh2woodharv_year(nn)=data{1};
-    %Ignore the column headings
+    % Ignore the column headings
     dump=textscan(fid,'%s\n',1,'delimiter','\n');
-    %Get the baseline simulation data
+    % Get the baseline simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     bor_luh2woodharv_baseline(nn,:)=cell2mat(data);
-    %Get the baseline old-skew simulation data
+    % Get the baseline old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     bor_luh2woodharv_baseline_old(nn,:)=cell2mat(data);
-    %Get the baseline young-skew simulation data
+    % Get the baseline young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     bor_luh2woodharv_baseline_young(nn,:)=cell2mat(data);
 end
@@ -149,18 +148,18 @@ bor_luh2_baseline_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2_unmasked_sens_region_boreal.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
-    %Get the year
+    % Get the year
     data=textscan(fid,'%d\n',1);
     bor_luh2_year(nn)=data{1};
-    %Ignore the column headings
+    % Ignore the column headings
     dump=textscan(fid,'%s\n',1,'delimiter','\n');
-    %Get the baseline simulation data
+    % Get the baseline simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     bor_luh2_baseline(nn,:)=cell2mat(data);
-    %Get the baseline old-skew simulation data
+    % Get the baseline old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     bor_luh2_baseline_old(nn,:)=cell2mat(data);
-    %Get the baseline young-skew simulation data
+    % Get the baseline young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     bor_luh2_baseline_young(nn,:)=cell2mat(data);
 end
@@ -219,7 +218,7 @@ bor_luh2_baseline_oldgrowth=bor_luh2_baseline(:,15);
 bor_luh2_baseline_old_oldgrowth=bor_luh2_baseline_old(:,15);
 bor_luh2_baseline_young_oldgrowth=bor_luh2_baseline_young(:,15);
 
-%Make the plot
+% Make the plot
 figure
 s1=subplot(3,1,1);
 hold on
@@ -263,7 +262,7 @@ set(e6.mainLine,'linewidth',2)
 set(e5.edge,'linestyle','none')
 set(e6.edge,'linestyle','none')
 
-%Add on the lines for LUC only
+% Add on the lines for land-use change only
 subplot(3,1,1);
 e7=shadedErrorBar(trop_luh2_year,trop_luh2_baseline_regrowth,cat(2,abs(trop_luh2_baseline_regrowth-trop_luh2_baseline_old_regrowth),...
     abs(trop_luh2_baseline_regrowth-trop_luh2_baseline_young_regrowth)),'lineProps','b--');

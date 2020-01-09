@@ -11,12 +11,11 @@
 
 figure
 
-%---
-%Fig. 2a - human-driven changes over 1900-2015 from LUH2
+%--- Fig. 2a - human-driven changes over 1900-2015 from LUH2 ---
 
 nyout=13;
 
-%Load data
+% Load data
 
 luh2woodharv_year=NaN(nyout,1);
 luh2woodharv_baseline=NaN(nyout,15);
@@ -25,18 +24,18 @@ luh2woodharv_baseline_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2woodharv_unmasked_sens_global.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
-    %Get the year
+    % Get the year
     data=textscan(fid,'%d\n',1);
     luh2woodharv_year(nn)=data{1};
-    %Ignore the column headings
+    % Ignore the column headings
     dump=textscan(fid,'%s\n',1,'delimiter','\n');
-    %Get the baseline simulation data
+    % Get the baseline simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2woodharv_baseline(nn,:)=cell2mat(data);
-    %Get the baseline old-skew simulation data
+    % Get the baseline old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2woodharv_baseline_old(nn,:)=cell2mat(data);
-    %Get the baseline young-skew simulation data
+    % Get the baseline young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2woodharv_baseline_young(nn,:)=cell2mat(data);
 end
@@ -50,18 +49,18 @@ luh2_baseline_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2_unmasked_sens_global.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
-    %Get the year
+    % Get the year
     data=textscan(fid,'%d\n',1);
     luh2_year(nn)=data{1};
-    %Ignore the column headings
+    % Ignore the column headings
     dump=textscan(fid,'%s\n',1,'delimiter','\n');
-    %Get the baseline simulation data
+    % Get the baseline simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2_baseline(nn,:)=cell2mat(data);
-    %Get the baseline old-skew simulation data
+    % Get the baseline old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2_baseline_old(nn,:)=cell2mat(data);
-    %Get the baseline young-skew simulation data
+    % Get the baseline young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2_baseline_young(nn,:)=cell2mat(data);
 end
@@ -86,7 +85,7 @@ luh2_baseline_oldgrowth=luh2_baseline(:,15);
 luh2_baseline_old_oldgrowth=luh2_baseline_old(:,15);
 luh2_baseline_young_oldgrowth=luh2_baseline_young(:,15);
 
-%Make the plot
+% Make the plot
 s1=subplot(3,1,1);
 hold on
 e1=shadedErrorBar(luh2woodharv_year,luh2woodharv_baseline_regrowth,cat(2,abs(luh2woodharv_baseline_regrowth-luh2woodharv_baseline_old_regrowth),...
@@ -113,12 +112,12 @@ box on
 t1=text(s1,1902,53,'(a)');
 set(t1,'fontweight','bold','fontsize',12)
 
-%---
-%Fig. 2b - changes from all sources in closed-canopy forests over 1900-2100, including a disturbance scenario
+
+%--- Fig. 2b - changes from all sources in closed-canopy forests over 1900-2100, including a disturbance scenario ---
 
 nyout=22;
 
-%Load data
+% Load data
 
 luh2dist_year=NaN(nyout,1);
 luh2dist_baseline=NaN(nyout,15);
@@ -130,34 +129,34 @@ luh2dist_sens_young=NaN(nyout,15);
 fid=fopen('age_reconstruction_luh2dist_masked_fut_scen_global.csv');
 dump=textscan(fid,'%s\n','delimiter',',','delimiter','\n');
 for nn=1:nyout
-    %Get the year
+    % Get the year
     data=textscan(fid,'%d\n',1);
     luh2dist_year(nn)=data{1};
-    %Ignore the column headings
+    % Ignore the column headings
     dump=textscan(fid,'%s\n',1,'delimiter','\n');
-    %Get the baseline simulation data
+    % Get the baseline simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2dist_baseline(nn,:)=cell2mat(data);
-    %Get the baseline old-skew simulation data
+    % Get the baseline old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2dist_baseline_old(nn,:)=cell2mat(data);
-    %Get the baseline young-skew simulation data
+    % Get the baseline young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2dist_baseline_young(nn,:)=cell2mat(data);
-    %Get the sensitivity simulation data
+    % Get the sensitivity simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2dist_sens(nn,:)=cell2mat(data);
-    %Get the sensitivity old-skew simulation data
+    % Get the sensitivity old-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2dist_sens_old(nn,:)=cell2mat(data);
-    %Get the sensitivity young-skew simulation data
+    % Get the sensitivity young-skew simulation data
     data=textscan(fid,'%*s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n',1,'delimiter',',');
     luh2dist_sens_young(nn,:)=cell2mat(data);
 end
 clear nn data dump
 fclose(fid);
 
-%Remove the 2015 data point
+% Remove the 2015 data point
 aa=find(luh2dist_year==2015);
 luh2dist_year(aa)=[];
 luh2dist_baseline(aa,:)=[];
@@ -182,7 +181,7 @@ luh2dist_sens_oldgrowth=luh2dist_sens(:,15);
 luh2dist_sens_old_oldgrowth=luh2dist_sens_old(:,15);
 luh2dist_sens_young_oldgrowth=luh2dist_sens_young(:,15);
 
-%Make the plot
+% Make the plot
 s2=subplot(3,1,2);
 hold on
 e1=shadedErrorBar(luh2dist_year,luh2dist_baseline_regrowth,cat(2,abs(luh2dist_baseline_regrowth-luh2dist_baseline_old_regrowth),...
@@ -208,8 +207,8 @@ box on
 t2=text(s2,1903,21,'(b)');
 set(t2,'fontweight','bold','fontsize',12)
 
-%---
-%Fig. 2c - Same data as for Fig. 2b, but showing age distributions
+
+%--- Fig. 2c - Same data as for Fig. 2b, but showing age distributions ---
 
 ages=5:10:150;
 
@@ -223,12 +222,12 @@ hold(p1(1)); hold(p1(2));
 set(h1,'marker','.','markersize',10,'color','k')
 set(h2,'marker','.','markersize',15,'color','k','linestyle','none')
 set(p1(1),'ycolor','k'); set(p1(2),'ycolor','k');
-%Other years for baseline simulation
+% Other years for baseline simulation
 plot(p1(1),ages(1:14),luh2dist_baseline(ind2,1:14),'k-.','markersize',5,'marker','^')
 plot(p1(1),ages(1:14),luh2dist_baseline(ind3,1:14),'k-.','markersize',5,'marker','square')
 plot(p1(2),ages(15),luh2dist_baseline(ind2,15),'k.','markersize',5,'marker','^')
 plot(p1(2),ages(15),luh2dist_baseline(ind3,15),'k.','markersize',5,'marker','square')
-%All years for sensitivity simulation
+% All years for sensitivity simulation
 plot(p1(1),ages(1:14),luh2dist_sens(ind2,1:14),'r-.','markersize',5,'marker','^')
 plot(p1(1),ages(1:14),luh2dist_sens(ind3,1:14),'r--','markersize',5,'marker','square')
 plot(p1(2),ages(15),luh2dist_sens(ind2,15),'r.','markersize',5,'marker','^')

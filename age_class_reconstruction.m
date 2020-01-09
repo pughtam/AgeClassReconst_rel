@@ -3,14 +3,15 @@
 % age distributions at regional and global aggregations.
 %
 % Age is categorised in annual bins up to 140 years old, after which it is designated as old-growth. Output is then grouped
-% into 10-year bins for display purposes. Note that simulation must therefore start 140 years before the first year for which
-% an age distribution is required.
+% into 10-year bins for display purposes. Note that simulation must therefore start at least 140 years before the first year 
+% for which an age distribution is required. E.g. for a simulation where age distributions are first required in 1900, the
+% calculations must start in 1760 at the latest (1750 is used here for the calculation start date).
 %
 % An implicit assumption when using the LUHv2h data is that all land-use change or wood harvest actions in that dataset are
 % enacted through transitioning patches of land at least 0.1 ha in size.
 %
-% Scenarios can be constructed, multiplying non-LUC or wood harvest disturbance rates by an arbitrary factor. Different
-% assumptions for the likelihood of disturbance with stand age are also tested.
+% Scenarios can be constructed, multiplying non-land-use change (LUC) or wood harvest disturbance rates by an arbitrary factor. 
+% Different assumptions for the likelihood of disturbance with stand age are also tested.
 %
 % All calculations are made on a 1 x 1 degree global grid, aggregating the LUHv2h and forest mask data to this resolution.
 %
@@ -37,20 +38,20 @@
 % t.a.m.pugh@bham.ac.uk
 % 12.09.19
 
-%---
-% Input options
+
+%--- Input options---
 year1=1900; %First calendar year of simulation for which output is required (i.e. after spin-up)
 nyear=115; %Total number of years of simulation for which output is required (if a future scenario is used, this is added to this variable later)
-inc_luh2=true; %Include the LUH2 transitions?
-inc_luh2futscen=true; %Include an LUH2 future scenario to 2100?
+inc_luh2=true; %Include the LUH2 transitions? (true=yes)
+inc_luh2futscen=true; %Include an LUH2 future scenario to 2100? (true=yes)
 inc_woodharv=false; %Include the wood harvest transitions? Standard assumption is inc_woodharv=false (only functional if inc_luh2=true)
 inc_dist=true; %Include background disturbance (true) or just LUH2 transitions (false)
 
-inc_agesens=false; %Include sensitivity tests on preferrential age of conversion
+inc_agesens=true; %Include sensitivity tests on preferrential age of conversion
 inc_distsens=true; %Include disturbance sensitivity scenarios (settings for these are in the Calculations section, below)
 
 output_crosscheck_plots=0; %Make diagnostic cross-check plots between states and transitions
-ccanopymask=true; %Mask results according to year 2000 closed-canopy forest cover?
+ccanopymask=true; %Mask results according to year 2000 closed-canopy forest cover? (true=yes)
 
 loadinputdata=true; %Do not load input data if equal to false (for rapid reruns when input data is already in memory)
 
@@ -58,8 +59,7 @@ outputcsv=true; %Whether to output csv files with summary data
 csvname_stub='age_reconstruction_luh2dist_masked_fut_scen';
 
 
-%---
-% Settings and filepaths
+%--- Settings and filepaths ---
 
 nages=150; %Number of age classes (1 class = 1 year)
 
@@ -91,8 +91,7 @@ nyout=length(output_years);
 nages_dec=nages/10;
 
 
-%---
-% Basic checks
+%--- Basic checks for consistency of input options ---
 
 if inc_woodharv && inc_dist
     error('Using the background disturbance datasets and wood harvest from LUH2 double-counts wood harvest. Set either inc_woodharv or inc_dist to false')
@@ -104,23 +103,22 @@ if inc_dist && ~ccanopymask
 end
     
 
-%---
-% Now beginning processing
+%--- Load input data ---
 
 if loadinputdata
-    %Read in necessary data
+    % Read in necessary data
     
-    %Read initial forest state
+    % Read initial forest state
     nspinup=nages; %Start nages years before first output year to allow for spin-up of age classes (outputs are insensitive to longer spinup, even for disturbance)
     year1ind=year1-nspinup-firstluh2year+1;
     [primf_init,secdf_init]=luh2_forstates_read(luh2_filepath_states,year1ind);
     
-    %Read forest loss and gain transitions from LUH2
+    % Read forest loss and gain transitions from LUH2
     nyearluh2=nyear+nspinup;
     [luh2_forlu_loss_prim_1deg,luh2_forlu_loss_sec_1deg]=luh2_forloss_read(luh2_filepath_trans,year1ind,nyearluh2,inc_woodharv);
     luh2_forlu_gain_1deg=luh2_forgain_read(luh2_filepath_trans,year1ind,nyearluh2,inc_woodharv);
     
-    %Add future scenario data to luh2 arrays if necessary
+    % Add future scenario data to luh2 arrays if necessary
     if inc_luh2futscen
         if year1==1900 && nyear==115
             nyear=nyear+85;
@@ -136,11 +134,11 @@ if loadinputdata
         clear luh2_forlu_loss_fut_prim_1deg luh2_forlu_loss_fut_sec_1deg luh2_forlu_gain_fut_1deg
     end
     
-    %Read in forest area
+    % Read in forest area
     if ccanopymask
         fmask_0p5deg=fliplr(ncread(formaskfile,'forested_50_percent'));
         fmask_0p5deg=double(fmask_0p5deg)./100;
-        %Aggregate to 1 degree
+        % Aggregate to 1 degree
         fmask=NaN(360,180);
         for xx=1:360
             for yy=1:180
@@ -157,14 +155,14 @@ if loadinputdata
         fmask=ones(360,180);
     end
     
-    %Read in disturbance return period
+    % Read in disturbance return period
     if inc_dist
         distint_in=ncread(distfile,'tauO');
         distint_in=fliplr(distint_in);
         
-        %Assign disturbance rates for areas outside of the mask used in the disturbance return period dataset using the nearest
-        %neighbour rule in order to have values for all gridcells containing closed-canopy forest (as in Pugh et al., 2019,
-        %Nature Geoscience 12, 730-735).
+        % Assign disturbance rates for areas outside of the mask used in the disturbance return period dataset using the nearest
+        % neighbour rule in order to have values for all gridcells containing closed-canopy forest (as in Pugh et al., 2019,
+        % Nature Geoscience 12, 730-735).
         
         distint=distint_in;
         nansleft=length(find(isnan(distint)==1));
@@ -183,8 +181,8 @@ if loadinputdata
         end
         clear ii jj nansleft temp temp_ext
         
-        %Do not extrapolate to gridcells without at least 5% closed-canopy forest cover to avoid overextrapolation.
-        %For these gridcells assign the median global disturbance return period from the original dataset.
+        % Do not extrapolate to gridcells without at least 5% closed-canopy forest cover to avoid overextrapolation.
+        % For these gridcells assign the median global disturbance return period from the original dataset.
         distint(fmask<0.05)=nanmedian(distint_in(:));
     else
         distint=zeros(360,180);
@@ -192,8 +190,8 @@ if loadinputdata
 
 end
 
-%---
-% Calculations section
+
+%--- Calculations section ---
 
 if inc_agesens && inc_distsens
     simulation_names={'Baseline','Baseline old-skew','Baseline young-skew',...
@@ -217,7 +215,7 @@ fage_out_decade_base=age_class_reconstruction_func(use_dist_scen,LUC_age_weights
     0,0,nyout,nages_dec,0,0);
 
 if inc_agesens
-    %Baseline simulation with weighting towards older age classes
+    % Baseline simulation with weighting towards older age classes
     LUC_age_weights=1; 
     dist_age_weights=1;
     use_dist_scen=false;
@@ -226,7 +224,7 @@ if inc_agesens
         nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
         0,0,nyout,nages_dec,0,0);
     
-    %Baseline simulation with weighting towards younger age classes
+    % Baseline simulation with weighting towards younger age classes
     LUC_age_weights=2;
     dist_age_weights=2;
     use_dist_scen=false;
@@ -237,7 +235,7 @@ if inc_agesens
 end
 
 if inc_distsens
-    %Sensitivity simulation with uniform weighting
+    % Sensitivity simulation with uniform weighting
     LUC_age_weights=0;
     dist_age_weights=0;
     use_dist_scen=true;
@@ -251,7 +249,7 @@ if inc_distsens
         dist_scen_start,dist_scen_end,nyout,nages_dec,firstscenyear,lastscenyear);
     
     if inc_agesens
-        %Sensitivity simulation with weighting towards older age classes
+        % Sensitivity simulation with weighting towards older age classes
         LUC_age_weights=1;
         dist_age_weights=1;
         use_dist_scen=true;
@@ -262,7 +260,7 @@ if inc_distsens
             nages,secdf_init,primf_init,luh2_forlu_loss_sec_1deg,luh2_forlu_loss_prim_1deg,luh2_forlu_gain_1deg,distint,nyear,nspinup,year1,...
             dist_scen_start,dist_scen_end,nyout,nages_dec,firstscenyear,lastscenyear);
         
-        %Sensitivity simulation with weighting towards younger age classes
+        % Sensitivity simulation with weighting towards younger age classes
         LUC_age_weights=2;
         dist_age_weights=2;
         use_dist_scen=true;
@@ -302,11 +300,13 @@ else
 end
 clear size_fage_out_decade
 
-%---
+
+%--- Optional cross-checks for consistency of calculations with data provided by LUH2 ---
+
 if output_crosscheck_plots
-    %Cross-check total forest fraction with states file for end of the calculation. Difference should be no more than
-    %rounding errors (influenced by minimum for "to_lose" in age_class_reconstruction_func.m).
-    %NOTE: These should only agree if wood harvest is included in the transitions (i.e. inc_woodharv=1)
+    % Cross-check total forest fraction with states file for end of the calculation. Difference should be no more than
+    % rounding errors (influenced by minimum for "to_lose" in age_class_reconstruction_func.m).
+    % NOTE: These should only agree if wood harvest is included in the transitions (i.e. inc_woodharv=1)
     [primf_end,secdf_end]=luh2_forstates_read(luh2_filepath_states,year1ind+nspinup+nyear);
     res_check=sum(fage_out_decade(:,:,:,3),3)-primf_end-secdf_end; %Assumes that year 2015 is 3rd index in array
     
@@ -316,8 +316,8 @@ if output_crosscheck_plots
     colorbar
 end
 
-%---
-% Calculate regional and global age distributions
+
+%--- Calculate regional and global age distributions ---
 
 % Calculate unmasked grid-cell area
 garea=global_grid_area_1deg()';
@@ -340,12 +340,12 @@ fage_out_decade_frac=NaN(size(fage_out_decade));
 fage_out_decade_area=NaN(size(fage_out_decade));
 for nn=1:nyout
     if ccanopymask
-        %Standardise by total forest fraction (i.e. convert to fraction of gridcell to allow to use forest fraction from another database)
+        % Standardise by total forest fraction (i.e. convert to fraction of gridcell to allow to use forest fraction from another database)
         fage_out_decade_frac(:,:,:,nn,:)=fage_out_decade(:,:,:,nn,:)./permute(repmat(fage_out_decade_totfor(:,:,nn,:),[1 1 1 1 nages_dec]),[1 2 5 3 4]);
     else
         fage_out_decade_frac(:,:,:,nn,:)=fage_out_decade(:,:,:,nn,:);
     end
-    %Convert to areas using provided forest fraction file
+    % Convert to areas using provided forest fraction file
     fage_out_decade_area(:,:,:,nn,:)=fage_out_decade_frac(:,:,:,nn,:).*repmat(fmask.*garea,[1 1 nages_dec 1 nsens]);
 end
 clear nn
@@ -380,9 +380,10 @@ clear ss nn aa fage_out_decade_area_sel
 fage_out_decade_reg_perc=(fage_out_decade_reg./repmat(sum(fage_out_decade_reg,2),[1 nages_dec 1]))*100;
 fage_out_decade_globe_perc=(fage_out_decade_globe./repmat(sum(fage_out_decade_globe,1),[nages_dec 1]))*100;
 
-%---
+
+%--- Output csv file with global outputs for each simulation ---
+
 if outputcsv
-    %Output csv file with global outputs for each simulation
     fid=fopen([csvname_stub,'_global.csv'],'w');
     if ccanopymask
         fprintf(fid,'Units: million km2 closed-canopy forest area\n');
@@ -401,7 +402,7 @@ if outputcsv
     clear nn
     fclose(fid);
     
-    %Output csv files with regional outputs for each simulation
+    % Output csv files with regional outputs for each simulation
     for rr=1:nregion
         fid=fopen([csvname_stub,'_region_',regions_short{rr},'.csv'],'w');
         if ccanopymask
@@ -423,7 +424,9 @@ if outputcsv
     end
 end
 
-%Plot based on global numbers
+
+%--- Quick plot based on global numbers ---
+
 figure
 hold on
 plot(output_years,sum(fage_out_decade_globe(1:14,:,1),1),'b-o')
@@ -436,3 +439,4 @@ if inc_agesens
 end
 ylabel('Forest area (M km^2)')
 legend('Regrowth','Old-growth')
+

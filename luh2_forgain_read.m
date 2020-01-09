@@ -1,15 +1,15 @@
 function luh2_forlu_gain_1deg=luh2_forgain_read(filepath,year1ind,nyear,inc_woodharv)
-%Load in the LUH2 transitions data for a specified period
-%Sum up the forest gain transitions fractions
-%Aggregate to 1 degree resolution
+% Load in the LUH2 transitions data for a specified period
+% Sum up the forest gain transitions fractions
+% Aggregate to 1 degree resolution
 %
-%filepath should be the path to the transitions.nc file as downloaded from http://luh.umd.edu/data.shtml
+% filepath should be the path to the transitions.nc file as downloaded from http://luh.umd.edu/data.shtml
 %
-%T. Pugh
-%10.08.19
+% T. Pugh
+% 10.08.19
 
 %---
-%Do all processing in latitude bands to minimise memory requirements
+% Do all processing in latitude bands to minimise memory requirements
 luh2_forlu_gain_1deg=NaN(360,180,nyear);
 
 llint=80; %index range for latitude bands
@@ -83,7 +83,7 @@ for lls=1:llint:720
         clear secyf_harv
     end
     
-    %Aggregate to 1 x 1 degree
+    % Aggregate to 1 x 1 degree
     indaggs=ceil(lls/4);
     indagge=ceil((lls+llint-1)/4);
     for xx=1:360
